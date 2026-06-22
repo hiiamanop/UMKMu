@@ -126,7 +126,9 @@ describe('Orders Management', () => {
 
     it('should filter orders by date range', () => {
       const dateFrom = new Date('2026-06-21').toISOString()
-      const dateTo = new Date('2026-06-22').toISOString()
+      const toDate = new Date('2026-06-22')
+      toDate.setHours(23, 59, 59, 999)
+      const dateTo = toDate.toISOString()
 
       const filteredOrders = mockOrders.filter((order) => {
         const orderDate = new Date(order.created_at)
