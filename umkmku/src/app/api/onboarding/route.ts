@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { getAIModel } from '@/lib/ai/provider'
-import { generateSlug, ONBOARDING_SYSTEM_PROMPT } from '@/lib/ai/onboarding'
+import { generateSlug, getOnboardingSystemPrompt } from '@/lib/ai/onboarding'
 import { createServiceClient } from '@/lib/supabase/server'
+import { validateCategoryData, type CategoryType } from '@/lib/categories'
 import type { SupabaseClient } from '@supabase/supabase-js'
+
+const VALID_CATEGORIES: CategoryType[] = ['skincare', 'parfum', 'fashion', 'fdb']
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const category: CategoryType = body.category?.trim().toLowerCase()
     const description: string = body.description?.trim()
+
+    // Validate category
+    if (!category || !VALID_CATEGORIES.includes(category)) {
+      return NextResponse.json(
+        { error: 'Pilih kategori yang valid: skincare, parfum, fashion, atau fdb' },
+        { status: 400 }
+      )
+    }
 
     if (!description || description.length < 20) {
       return NextResponse.json(
@@ -24,10 +36,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Extract config dari AI
+    // Extract config dari AI menggunakan onboarding prompt (untuk brand + products extract)
+    const onboardingPrompt = getOnboardingSystemPrompt(category)
     const { text } = await generateText({
       model: getAIModel(),
-      system: ONBOARDING_SYSTEM_PROMPT,
+      system: onboardingPrompt,
       prompt: description,
     })
 
@@ -59,11 +72,12 @@ export async function POST(request: NextRequest) {
     const baseSlug = generateSlug(config.brand_name)
     const slug = await ensureUniqueSlug(supabase, baseSlug)
 
-    // Simpan tenant ke Supabase
+    // Simpan tenant ke Supabase dengan category
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .insert({
         slug,
+        category,
         brand_name: config.brand_name,
         tagline: config.tagline,
         description: config.description,
@@ -72,7 +86,7 @@ export async function POST(request: NextRequest) {
         accent_color: config.accent_color,
         whatsapp_number: config.whatsapp_number,
         instagram_url: config.instagram_url,
-        chatbot_name: 'Beauty Advisor',
+        chatbot_name: getCategoryDefaultChatbotName(category),
         chatbot_persona: config.chatbot_persona,
       })
       .select('id')
@@ -83,19 +97,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gagal membuat toko' }, { status: 500 })
     }
 
-    // Simpan produk
+    // Simpan produk dengan category-specific data
     if (config.products.length > 0) {
-      const products = config.products.map((p, index) => ({
-        tenant_id: tenant.id,
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        skin_types: p.skin_types,
-        concerns: p.concerns,
-        ingredients: p.ingredients,
-        usage_step: p.usage_step,
-        sort_order: index,
-      }))
+      const products = config.products.map((p, index) => {
+        // Validate category-specific data
+        const validation = validateCategoryData(category, p.category_data)
+        if (!validation.success) {
+          console.warn(`Product ${p.name} validation failed:`, validation.error)
+        }
+
+        const baseProduct = {
+          tenant_id: tenant.id,
+          category_type: category,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          sort_order: index,
+        }
+
+        // Add category-specific data to appropriate column
+        switch (category) {
+          case 'skincare':
+            return { ...baseProduct, skincare_data: p.category_data }
+          case 'parfum':
+            return { ...baseProduct, parfum_data: p.category_data }
+          case 'fashion':
+            return { ...baseProduct, fashion_data: p.category_data }
+          case 'fdb':
+            return { ...baseProduct, fdb_data: p.category_data }
+          default:
+            return { ...baseProduct, skincare_data: p.category_data }
+        }
+      })
 
       const { error: productsError } = await supabase
         .from('products')
@@ -127,22 +160,15 @@ type NormalizedProduct = {
   name: string
   description: string
   price: number | null
-  skin_types: string[]
-  concerns: string[]
-  ingredients: string[]
-  usage_step: string | null
+  category_data: Record<string, unknown>
 }
-
-const VALID_SKIN_TYPES = ['oily', 'combination', 'dry', 'sensitive', 'all']
-const VALID_CONCERNS = ['acne', 'brightening', 'anti-aging', 'hydrating', 'pores', 'soothing', 'firming']
-const VALID_USAGE_STEPS = ['cleanser', 'toner', 'serum', 'moisturizer', 'sunscreen', 'treatment', 'mask']
 
 function normalizeProducts(raw: unknown): NormalizedProduct[] {
   if (!Array.isArray(raw)) return []
   return raw
     .map((p) => {
       if (typeof p === 'string') {
-        return { name: p, description: '', price: null, skin_types: [], concerns: [], ingredients: [], usage_step: null }
+        return { name: p, description: '', price: null, category_data: {} }
       }
       if (typeof p !== 'object' || p === null) return null
       const obj = p as Record<string, unknown>
@@ -150,18 +176,31 @@ function normalizeProducts(raw: unknown): NormalizedProduct[] {
         name: String(obj.name ?? ''),
         description: String(obj.description ?? ''),
         price: typeof obj.price === 'number' ? obj.price : null,
-        skin_types: filterEnum(obj.skin_types, VALID_SKIN_TYPES),
-        concerns: filterEnum(obj.concerns, VALID_CONCERNS),
-        ingredients: Array.isArray(obj.ingredients) ? obj.ingredients.map(String) : [],
-        usage_step: typeof obj.usage_step === 'string' && VALID_USAGE_STEPS.includes(obj.usage_step) ? obj.usage_step : null,
+        category_data: extractCategoryData(obj),
       }
     })
     .filter((p): p is NormalizedProduct => p !== null && p.name.length > 0)
 }
 
-function filterEnum(arr: unknown, valid: string[]): string[] {
-  if (!Array.isArray(arr)) return []
-  return arr.map(String).filter((v) => valid.includes(v))
+function extractCategoryData(obj: Record<string, unknown>): Record<string, unknown> {
+  // Extract all fields except standard ones
+  const { name, description, price, ...categoryData } = obj
+  return categoryData
+}
+
+function getCategoryDefaultChatbotName(category: CategoryType): string {
+  switch (category) {
+    case 'skincare':
+      return 'Beauty Advisor'
+    case 'parfum':
+      return 'Fragrance Expert'
+    case 'fashion':
+      return 'Style Advisor'
+    case 'fdb':
+      return 'Food Specialist'
+    default:
+      return 'Advisor'
+  }
 }
 
 async function ensureUniqueSlug(
