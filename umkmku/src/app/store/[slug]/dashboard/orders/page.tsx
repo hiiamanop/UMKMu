@@ -7,5 +7,5 @@ interface Props {
 export default async function OrdersPageRoute({ params }: Props) {
   const { slug } = await params
 
-  return <OrdersPage />
+  return <OrdersPage slug={slug} />
 }
