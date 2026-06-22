@@ -154,7 +154,7 @@ export async function PUT(
       const validationResult = validateCategoryData(finalCategoryType, categoryData)
       if (!validationResult.success) {
         const errorMessages = validationResult.error?.errors
-          ?.map((e) => `${e.path.join('.')}: ${e.message}`)
+          ?.map((e: any) => `${e.path.join('.')}: ${e.message}`)
           .join('; ')
         return NextResponse.json(
           {

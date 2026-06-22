@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
 
     if (!validationResult.success) {
       const errorMessages = validationResult.error?.errors
-        ?.map((e) => `${e.path.join('.')}: ${e.message}`)
+        ?.map((e: any) => `${e.path.join('.')}: ${e.message}`)
         .join('; ')
       return NextResponse.json(
         {
