@@ -34,7 +34,7 @@ function extractKeywords(messages: ChatMessage[]): string[] {
  * Check if any keyword matches any item in the target array (case-insensitive)
  * Uses word-boundary aware matching to avoid partial matches
  */
-function hasAnyKeywordMatch(keywords: string[], targets: string[]): boolean {
+function hasAnyKeywordMatch(keywords: string[], targets: string[] | undefined): boolean {
   if (!targets || targets.length === 0) return false
   const lowerTargets = targets.map((t) => t.toLowerCase())
 
@@ -57,7 +57,7 @@ function hasAnyKeywordMatch(keywords: string[], targets: string[]): boolean {
  * Count matching keywords in target array (case-insensitive)
  * Uses word-boundary aware matching to avoid partial matches
  */
-function countKeywordMatches(keywords: string[], targets: string[]): number {
+function countKeywordMatches(keywords: string[], targets: string[] | undefined): number {
   if (!targets || targets.length === 0) return 0
   const lowerTargets = targets.map((t) => t.toLowerCase())
   let count = 0
