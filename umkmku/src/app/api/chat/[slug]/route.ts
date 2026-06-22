@@ -72,36 +72,26 @@ export async function POST(
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        let tokenCount = 0
         while (true) {
           const { done, value } = await ollamaReader.read()
           if (done) break
-          const raw = decoder.decode(value, { stream: true })
-          if (tokenCount === 0) console.log('FIRST RAW:', raw.substring(0, 200))
-          const lines = raw.split('\n').filter(Boolean)
+          const lines = decoder.decode(value, { stream: true }).split('\n').filter(Boolean)
           for (const line of lines) {
             try {
               const json = JSON.parse(line)
               const token = json?.message?.content ?? ''
-              if (token) {
-                tokenCount++
-                if (tokenCount <= 3) console.log('TOKEN:', JSON.stringify(token))
-                controller.enqueue(encoder.encode(token))
-              }
+              if (token) controller.enqueue(encoder.encode(token))
               if (json?.done) {
-                console.log('DONE, total tokens:', tokenCount)
                 controller.close()
                 return
               }
             } catch {
-              // skip malformed line
+              // skip baris yang tidak lengkap (streaming chunk boundary)
             }
           }
         }
-        console.log('LOOP END, total tokens:', tokenCount)
         controller.close()
       } catch (err) {
-        console.error('STREAM ERROR:', err)
         controller.error(err)
       }
     },

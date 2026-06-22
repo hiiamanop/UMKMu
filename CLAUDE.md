@@ -4,6 +4,27 @@
 
 ---
 
+## Framework Guardrails (BACA DULU)
+
+**Peran AI di proyek ini:** co-founder & CTO yang **menantang ide, bukan menyetujui**. Definisi lengkap (portabel, in-repo): [`docs/COFOUNDER_ROLE.md`](docs/COFOUNDER_ROLE.md). Baca itu di awal tiap diskusi strategis.
+
+Sebelum membangun atau mengubah fitur APA PUN, lewati gerbang framework: **invoke skill `umkmku-feature`**. Skill itu memaksa cek scope (feature creep? langgar keputusan final?), pola arsitektur, dan jebakan teknis.
+
+Tiga lapis yang menjaga konsistensi:
+
+1. **CLAUDE.md (file ini)** — WHAT kita bangun + keputusan final (di bawah).
+2. **Memory project** — peran, gotcha teknis & status terkini. Wajib diingat:
+   - `role-cofounder-cto` — peran Claude: co-founder & CTO yang MENANTANG ide, bukan yes-man
+   - `architecture-patterns` — 4 pola wajib
+   - `tech-gotchas-ai-ollama` — jebakan mahal (AI SDK+Ollama+Gemma)
+   - `prototype-status` — apa yang sudah/belum jalan
+   - `feedback-cara-kerja` — gaya kerja Naufa
+3. **Skill `umkmku-feature`** — checklist eksekusi.
+
+⚠️ **Jebakan paling mahal:** chat AI **tidak boleh** lewat AI SDK `streamText`/`generateText` dengan Ollama+Gemma (balik kosong karena thinking mode). Pakai Ollama native `/api/chat` + `think: false`. Detail di memory `tech-gotchas-ai-ollama`.
+
+---
+
 ## Visi & Misi
 
 **Mission:** Membebaskan brand lokal Indonesia dari ketergantungan platform, dan membangun fondasi digital yang benar-benar mereka miliki.
@@ -89,14 +110,14 @@ Di v1, chatbot merekomendasikan produk dan redirect ke Tokopedia/Shopee. Ini ada
 
 | Layer | Technology | Alasan |
 |---|---|---|
-| Framework | Next.js 15 (App Router) | SSR + API routes dalam satu project, Vercel-native |
+| Framework | Next.js 16.2.9 (App Router) | SSR + API routes dalam satu project, Vercel-native |
 | Language | TypeScript | Type safety untuk multi-tenant config |
 | Styling | Tailwind CSS + shadcn/ui | Cepat, consistent, tidak perlu design system custom |
 | Database | Supabase (PostgreSQL) | Real-time, RLS untuk multi-tenant security, built-in auth |
 | Storage | Supabase Storage | Foto produk merchant |
 | AI (dev) | Ollama + Gemma 4 12b | Gratis, lokal, RTX 3060 12GB feasible dengan quantization |
 | AI (prod) | Claude API (claude-sonnet-4-6) | Quality terbaik untuk Indonesian language |
-| AI SDK | Vercel AI SDK v4 | Provider-agnostic, streaming built-in |
+| AI SDK | Vercel AI SDK v6 | Provider-agnostic, streaming built-in — TAPI chat di-bypass (lihat Framework Guardrails) |
 | Deployment | Vercel | Wildcard subdomain, zero-config Next.js |
 | Package Manager | pnpm | Lebih cepat dari npm/yarn |
 
@@ -200,24 +221,26 @@ Middleware baca hostname → extract slug → rewrite URL → Next.js render hal
 
 ```typescript
 // lib/ai/provider.ts
-import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { createAnthropic } from '@ai-sdk/anthropic'
+import type { LanguageModel } from 'ai'
 
-function getModel() {
-  if (process.env.AI_PROVIDER === 'ollama') {
-    return createOpenAI({
+export function getAIModel(): LanguageModel {
+  if ((process.env.AI_PROVIDER ?? 'ollama') === 'ollama') {
+    const ollama = createOpenAICompatible({
+      name: 'ollama',
       baseURL: process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1',
-      apiKey: 'ollama',
-    })(process.env.OLLAMA_MODEL ?? 'gemma4:12b')
+    })
+    return ollama(process.env.OLLAMA_MODEL ?? 'gemma4:12b')
   }
 
-  return createAnthropic()(
+  return createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(
     process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6'
   )
 }
-
-export const aiModel = getModel()
 ```
+
+> ⚠️ Pakai `@ai-sdk/openai-compatible`, BUKAN `@ai-sdk/openai` (`createOpenAI` hit `/v1/responses` yang Ollama tidak punya). Dan untuk **chat**, layer ini di-bypass total — lihat Framework Guardrails.
 
 ### .env.local (dev)
 
