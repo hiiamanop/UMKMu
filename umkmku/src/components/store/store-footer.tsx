@@ -1,3 +1,5 @@
+'use client'
+
 import type { Tenant } from '@/lib/supabase/types'
 
 interface Props {
