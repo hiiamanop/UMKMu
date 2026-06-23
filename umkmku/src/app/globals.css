@@ -8,8 +8,25 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: ui-monospace, monospace;
+  --font-heading: var(--font-serif);
+
+  /* Natura Essence Design Tokens */
+  --color-brand-primary: #e91e63;
+  --color-brand-primary-dark: #b80049;
+  --color-brand-on-surface: #1a1c1c;
+  --color-brand-surface: #f9f9f9;
+  --color-brand-surface-card: #ffffff;
+  --color-brand-surface-low: #f3f3f3;
+  --color-brand-secondary-text: #5b3f43;
+  --color-brand-muted-text: #8f6f73;
+  --color-brand-outline: #e4bdc2;
+  --color-brand-border: #e8e8e8;
+  --color-brand-eco: #006a34;
+  --color-brand-dark: #1a1c1c;
+  --color-brand-loyalty: #ffd9de;
+  --color-brand-loyalty-text: #400014;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,30 +66,31 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  /* Natura Essence brand overrides shadcn defaults */
+  --background: #f9f9f9;
+  --foreground: #1a1c1c;
+  --card: #ffffff;
+  --card-foreground: #1a1c1c;
+  --popover: #ffffff;
+  --popover-foreground: #1a1c1c;
+  --primary: #e91e63;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f3f3;
+  --secondary-foreground: #1a1c1c;
+  --muted: #f3f3f3;
+  --muted-foreground: #5b3f43;
+  --accent: #ffd9de;
+  --accent-foreground: #400014;
+  --destructive: #ba1a1a;
+  --border: #e8e8e8;
+  --input: #f3f3f3;
+  --ring: #e91e63;
+  --chart-1: #e91e63;
+  --chart-2: #006a34;
+  --chart-3: #1a1c1c;
+  --chart-4: #5b3f43;
+  --chart-5: #8f6f73;
+  --radius: 0.5rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -123,8 +141,86 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans), sans-serif;
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Natura Essence Typography Scale — matches Stitch design */
+@layer utilities {
+  /* Display: Libre Caslon Text serif, used for hero headlines */
+  .text-display {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 64px;
+    font-weight: 400;
+    line-height: 72px;
+    letter-spacing: -0.02em;
+  }
+  @media (max-width: 768px) {
+    .text-display {
+      font-size: 40px;
+      line-height: 48px;
+      letter-spacing: -0.01em;
+    }
+  }
+  /* Headline: serif, section titles */
+  .text-headline-lg {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 40px;
+  }
+  .text-headline-md {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 32px;
+  }
+  /* Body: Hanken Grotesk */
+  .text-body-lg {
+    font-family: var(--font-sans), sans-serif;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 28px;
+  }
+  .text-body-md {
+    font-family: var(--font-sans), sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 24px;
+  }
+  /* Label: uppercase caps, small */
+  .text-label-caps {
+    font-family: var(--font-sans), sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  /* Legacy alias */
+  .text-label-bold {
+    font-family: var(--font-sans), sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .text-price {
+    font-family: var(--font-sans), sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    color: var(--color-primary);
+  }
+  .text-price-strike {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+    opacity: 0.5;
+    text-decoration: line-through;
   }
 }

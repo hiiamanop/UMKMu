@@ -5,101 +5,86 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { Tenant } from '@/lib/supabase/types'
 import { updateAppearance } from '../actions'
+import { ImageUploader } from './image-uploader'
+import { FormSection, FieldLabel, StatusMessage } from './form-section'
 
-interface Props {
-  tenant: Tenant
-}
-
-export function AppearanceForm({ tenant }: Props) {
+export function AppearanceForm({ tenant }: { tenant: Tenant }) {
   const [state, action, pending] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      return updateAppearance(tenant.slug, formData)
-    },
+    async (_: unknown, formData: FormData) => updateAppearance(tenant.slug, formData),
     null
   )
 
   return (
-    <div className="bg-white rounded-xl p-6 space-y-6">
-      <h2 className="font-semibold text-lg">Tampilan & Warna</h2>
+    <form action={action} encType="multipart/form-data" className="space-y-0">
 
-      <form action={action} className="space-y-4">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Warna Utama</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="color"
-                name="primary_color"
-                defaultValue={tenant.primary_color ?? '#1a1a1a'}
-                className="h-10 w-12 rounded cursor-pointer border"
-              />
-              <Input
-                name="primary_color_text"
-                defaultValue={tenant.primary_color ?? '#1a1a1a'}
-                placeholder="#1a1a1a"
-                className="font-mono text-sm"
-                readOnly
-              />
+      <FormSection title="Warna Brand" description="Warna-warna ini akan diterapkan ke seluruh toko kamu.">
+        <div className="grid grid-cols-3 gap-5 mb-5">
+          {[
+            { name: 'primary_color', label: 'Warna Utama', hint: 'Tombol, teks judul, aksen utama', val: tenant.primary_color ?? '#1a1a1a' },
+            { name: 'secondary_color', label: 'Warna Background', hint: 'Background section, card produk', val: tenant.secondary_color ?? '#f5f5f5' },
+            { name: 'accent_color', label: 'Warna Aksen', hint: 'Detail, badge, elemen dekoratif', val: tenant.accent_color ?? '#d4a574' },
+          ].map((c) => (
+            <div key={c.name}>
+              <FieldLabel hint={c.hint}>{c.label}</FieldLabel>
+              <div className="flex items-center gap-3 bg-white border border-black/15 rounded-md px-3 py-2">
+                <input type="color" name={c.name} defaultValue={c.val}
+                  className="h-7 w-8 rounded cursor-pointer border-0 bg-transparent p-0" />
+                <Input name={`${c.name}_text`} defaultValue={c.val}
+                  className="border-0 p-0 h-auto font-mono text-sm shadow-none focus-visible:ring-0" readOnly />
+              </div>
             </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Warna Background</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="color"
-                name="secondary_color"
-                defaultValue={tenant.secondary_color ?? '#f5f5f5'}
-                className="h-10 w-12 rounded cursor-pointer border"
-              />
-              <Input
-                name="secondary_color_text"
-                defaultValue={tenant.secondary_color ?? '#f5f5f5'}
-                placeholder="#f5f5f5"
-                className="font-mono text-sm"
-                readOnly
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Warna Aksen</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="color"
-                name="accent_color"
-                defaultValue={tenant.accent_color ?? '#d4a574'}
-                className="h-10 w-12 rounded cursor-pointer border"
-              />
-              <Input
-                name="accent_color_text"
-                defaultValue={tenant.accent_color ?? '#d4a574'}
-                placeholder="#d4a574"
-                className="font-mono text-sm"
-                readOnly
-              />
-            </div>
-          </div>
+          ))}
         </div>
 
-        <div
-          className="rounded-lg p-4 text-sm"
-          style={{
-            backgroundColor: tenant.secondary_color ?? '#f5f5f5',
-            color: tenant.primary_color ?? '#1a1a1a',
-            borderLeft: `4px solid ${tenant.accent_color ?? '#d4a574'}`,
-          }}
-        >
-          Preview: Begini tampilan warna di toko kamu
+        {/* Preview */}
+        <div className="rounded p-4 text-sm border" style={{
+          backgroundColor: tenant.secondary_color ?? '#f5f5f5',
+          color: tenant.primary_color ?? '#1a1a1a',
+          borderLeft: `3px solid ${tenant.accent_color ?? '#d4a574'}`,
+        }}>
+          Preview: Begini kombinasi warna di toko kamu
         </div>
+      </FormSection>
 
-        {state?.error && <p className="text-red-600 text-sm">{state.error}</p>}
-        {state?.success && <p className="text-green-600 text-sm">Warna disimpan!</p>}
+      <FormSection title="Gambar Halaman Utama" description="Gambar-gambar di landing page toko kamu.">
+        <div className="grid grid-cols-1 gap-7">
+          <ImageUploader
+            name="hero_image" label="Hero — Foto utama kiri halaman"
+            hint="Rekomendasi: 1920×1080px landscape. Maks 5MB."
+            currentUrl={tenant.hero_image_url} aspectClass="w-48 h-28"
+          />
+          <div className="grid grid-cols-2 gap-6">
+            <ImageUploader
+              name="about_image_1" label="About — Foto kiri"
+              hint="Portrait 3:4. Maks 5MB."
+              currentUrl={tenant.about_image_1_url} aspectClass="w-24 h-32"
+            />
+            <ImageUploader
+              name="about_image_2" label="About — Foto kanan"
+              hint="Portrait 3:4. Maks 5MB."
+              currentUrl={tenant.about_image_2_url} aspectClass="w-24 h-32"
+            />
+          </div>
+          <ImageUploader
+            name="cta_image" label="CTA Banner — Background banner 'Temukan Koleksi Kami'"
+            hint="Rekomendasi: 1920×500px landscape. Maks 5MB."
+            currentUrl={tenant.cta_image_url} aspectClass="w-48 h-20"
+          />
+          <ImageUploader
+            name="footer_image" label="Footer — Foto tengah footer"
+            hint="Rekomendasi: portrait atau square. Maks 5MB."
+            currentUrl={tenant.footer_image_url} aspectClass="w-48 h-28"
+          />
+        </div>
+      </FormSection>
 
-        <Button type="submit" disabled={pending}>
-          {pending ? 'Menyimpan...' : 'Simpan Warna'}
+      <div className="flex items-center gap-4 pt-2">
+        <Button type="submit" disabled={pending}
+          className="bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity rounded-none text-label-caps tracking-widest px-8 py-3 h-auto">
+          {pending ? 'Menyimpan...' : 'Simpan Tampilan'}
         </Button>
-      </form>
-    </div>
+        <StatusMessage state={state} />
+      </div>
+    </form>
   )
 }

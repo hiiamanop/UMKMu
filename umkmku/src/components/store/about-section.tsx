@@ -1,41 +1,89 @@
+'use client'
+
+import { useState } from 'react'
+import Image from 'next/image'
+import { Plus, Minus } from 'lucide-react'
 import type { Tenant } from '@/lib/supabase/types'
 
 interface Props {
   tenant: Tenant
 }
 
+const PILLARS = [
+  { num: '01', title: 'Bahan Eco-Conscious', body: 'Kami memilih bahan-bahan alami yang dipanen secara berkelanjutan untuk melindungi bumi.' },
+  { num: '02', title: 'Cruelty-Free & Vegan', body: 'Semua produk bebas dari uji coba hewan dan tidak mengandung bahan turunan hewani.' },
+  { num: '03', title: 'Aman untuk Semua Kulit', body: 'Diformulasikan lembut, cocok untuk semua jenis kulit termasuk kulit sensitif.' },
+  { num: '04', title: 'Kemasan Berkelanjutan', body: 'Kemasan kami dirancang untuk meminimalkan dampak lingkungan dan dapat didaur ulang.' },
+]
+
 export function AboutSection({ tenant }: Props) {
+  const [openIndex, setOpenIndex] = useState<number | null>(0)
+
   return (
-    <section className="bg-[var(--color-secondary)] py-16">
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="max-w-2xl">
-          <h2 className="text-2xl font-bold text-[var(--color-primary)] mb-4">
-            Tentang {tenant.brand_name}
-          </h2>
-          {tenant.description && (
-            <p className="text-gray-600 leading-relaxed">{tenant.description}</p>
-          )}
-          <div className="mt-6 flex flex-wrap gap-4">
-            {tenant.whatsapp_number && (
-              <a
-                href={`https://wa.me/${tenant.whatsapp_number.replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-[var(--color-accent)] underline"
+    <section className="py-20 md:py-28 px-6 md:px-16 bg-[var(--color-secondary)]">
+      <div className="max-w-[1280px] mx-auto">
+        {/* Top row: 5-col label+heading */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center mb-16">
+          <div className="md:col-span-5">
+            <span className="text-label-caps text-[var(--color-primary)] bg-[var(--color-primary)]/10 px-3 py-1 mb-6 inline-block">
+              ABOUT US
+            </span>
+            <h2 className="text-headline-lg leading-snug">
+              Jelajahi produk{' '}
+              <i className="italic">perawatan kulit alami</i>{' '}
+              kami yang dirancang untuk menutrisi dan meremajakan kulit{' '}
+              <i className="italic">Anda</i>.
+            </h2>
+          </div>
+        </div>
+
+        {/* Bottom: accordion left + image grid right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 md:gap-24 items-start">
+          {/* Accordion */}
+          <div className="border-t border-black/10">
+            {PILLARS.map((pillar, i) => (
+              <div
+                key={pillar.num}
+                className={`py-7 border-b border-black/10 ${openIndex !== i ? 'text-black/30' : ''}`}
               >
-                WhatsApp
-              </a>
-            )}
-            {tenant.instagram_url && (
-              <a
-                href={tenant.instagram_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-[var(--color-accent)] underline"
-              >
-                Instagram
-              </a>
-            )}
+                <button
+                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                  className="w-full flex justify-between items-center cursor-pointer"
+                >
+                  <div className="flex items-baseline gap-5 text-left">
+                    <span className="text-label-caps text-[10px] opacity-60">{pillar.num} / 04</span>
+                    <h3 className="text-headline-md">{pillar.title}</h3>
+                  </div>
+                  {openIndex === i
+                    ? <Minus size={18} className="shrink-0 text-[var(--color-accent)]" />
+                    : <Plus size={18} className="shrink-0" />
+                  }
+                </button>
+                {openIndex === i && (
+                  <p className="text-body-md text-[var(--color-accent)]/70 mt-4 ml-[calc(10px+1.25rem)] max-w-sm leading-relaxed">
+                    {pillar.body}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Staggered 2-col image grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="aspect-[3/4] overflow-hidden relative">
+              {tenant.about_image_1_url ? (
+                <Image src={tenant.about_image_1_url} alt="About 1" fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)' }} />
+              )}
+            </div>
+            <div className="aspect-[3/4] overflow-hidden mt-12 relative">
+              {tenant.about_image_2_url ? (
+                <Image src={tenant.about_image_2_url} alt="About 2" fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 100%)' }} />
+              )}
+            </div>
           </div>
         </div>
       </div>
