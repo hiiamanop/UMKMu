@@ -6,53 +6,48 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { Tenant } from '@/lib/supabase/types'
 import { updateChatbot } from '../actions'
+import { FormSection, FieldLabel, StatusMessage } from './form-section'
 
-interface Props {
-  tenant: Tenant
-}
-
-export function ChatbotForm({ tenant }: Props) {
+export function ChatbotForm({ tenant }: { tenant: Tenant }) {
   const [state, action, pending] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      return updateChatbot(tenant.slug, formData)
-    },
+    async (_: unknown, formData: FormData) => updateChatbot(tenant.slug, formData),
     null
   )
 
   return (
-    <div className="bg-white rounded-xl p-6 space-y-6">
-      <h2 className="font-semibold text-lg">Pengaturan Chatbot</h2>
-
-      <form action={action} className="space-y-4">
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Nama Beauty Advisor</label>
-          <Input
-            name="chatbot_name"
-            defaultValue={tenant.chatbot_name ?? 'Beauty Advisor'}
-            placeholder="Beauty Advisor"
-            required
-          />
-          <p className="text-xs text-gray-500">Nama yang akan muncul di chatbot toko kamu</p>
+    <form action={action} className="space-y-0">
+      <FormSection
+        title="Pengaturan Chatbot"
+        description="Chatbot ini akan membantu customer menemukan produk yang tepat di toko kamu."
+      >
+        <div className="grid grid-cols-1 gap-5">
+          <div>
+            <FieldLabel hint="Nama yang muncul di header chatbot toko">Nama Beauty Advisor</FieldLabel>
+            <Input name="chatbot_name"
+              defaultValue={tenant.chatbot_name ?? 'Beauty Advisor'}
+              placeholder="Beauty Advisor"
+              required
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
+          </div>
+          <div>
+            <FieldLabel hint="Deskripsikan gaya komunikasi chatbot. Semakin detail, semakin baik rekomendasinya.">
+              Kepribadian Chatbot
+            </FieldLabel>
+            <Textarea name="chatbot_persona"
+              defaultValue={tenant.chatbot_persona ?? ''}
+              placeholder="Contoh: Ramah, informatif, dan selalu memberikan rekomendasi personal. Gunakan bahasa yang hangat dan profesional. Fokus pada manfaat bahan alami."
+              className="min-h-[140px] bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
+          </div>
         </div>
+      </FormSection>
 
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Kepribadian Chatbot</label>
-          <Textarea
-            name="chatbot_persona"
-            defaultValue={tenant.chatbot_persona ?? ''}
-            placeholder="Contoh: Ramah, informatif, dan selalu memberikan rekomendasi yang personal. Gunakan bahasa yang hangat dan profesional."
-            className="min-h-[120px]"
-          />
-          <p className="text-xs text-gray-500">Deskripsikan bagaimana chatbot kamu berbicara dengan customer</p>
-        </div>
-
-        {state?.error && <p className="text-red-600 text-sm">{state.error}</p>}
-        {state?.success && <p className="text-green-600 text-sm">Pengaturan chatbot disimpan!</p>}
-
-        <Button type="submit" disabled={pending}>
+      <div className="flex items-center gap-4 pt-2">
+        <Button type="submit" disabled={pending}
+          className="bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity rounded-none text-label-caps tracking-widest px-8 py-3 h-auto">
           {pending ? 'Menyimpan...' : 'Simpan Pengaturan'}
         </Button>
-      </form>
-    </div>
+        <StatusMessage state={state} />
+      </div>
+    </form>
   )
 }

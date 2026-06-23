@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { Product } from '@/lib/supabase/types'
 import { upsertProduct } from '../actions'
+import { FieldLabel, StatusMessage } from '../../_components/form-section'
 
 const SKIN_TYPES = [
   { value: 'oily', label: 'Berminyak' },
@@ -25,9 +26,10 @@ const CONCERNS = [
   { value: 'firming', label: 'Mengencangkan' },
 ]
 
-const USAGE_STEPS = [
-  'cleanser', 'toner', 'serum', 'moisturizer', 'sunscreen', 'treatment', 'mask'
-]
+const USAGE_STEPS = ['cleanser', 'toner', 'serum', 'moisturizer', 'sunscreen', 'treatment', 'mask']
+
+const inputCls = "bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]"
+const checkboxCls = "accent-[var(--color-primary)] w-3.5 h-3.5"
 
 interface Props {
   slug: string
@@ -47,89 +49,93 @@ export function ProductForm({ slug, product, onSuccess }: Props) {
   )
 
   return (
-    <form action={formAction} className="space-y-4">
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Nama Produk *</label>
-        <Input name="name" defaultValue={product?.name} required />
+    <form action={formAction} className="space-y-5">
+      <div className="grid grid-cols-2 gap-5">
+        <div className="col-span-2">
+          <FieldLabel>Nama Produk *</FieldLabel>
+          <Input name="name" defaultValue={product?.name} required className={inputCls} />
+        </div>
+
+        <div className="col-span-2">
+          <FieldLabel>Deskripsi</FieldLabel>
+          <Textarea name="description" defaultValue={product?.description ?? ''}
+            className={`min-h-[80px] ${inputCls}`} />
+        </div>
+
+        <div>
+          <FieldLabel>Harga (IDR)</FieldLabel>
+          <Input name="price" type="number" defaultValue={product?.price ?? ''}
+            placeholder="150000" className={inputCls} />
+        </div>
+
+        <div>
+          <FieldLabel hint="Upload baru untuk mengganti foto saat ini">Foto Produk</FieldLabel>
+          <input name="image" type="file" accept="image/jpeg,image/png,image/webp"
+            className="block w-full text-xs text-[var(--color-accent)]/60 file:mr-3 file:py-2 file:px-3 file:border file:border-black/15 file:text-xs file:bg-white file:text-[var(--color-accent)] hover:file:bg-[var(--color-secondary)] file:cursor-pointer file:transition-colors" />
+        </div>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Deskripsi</label>
-        <Textarea name="description" defaultValue={product?.description ?? ''} />
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Harga (Rp)</label>
-        <Input name="price" type="number" defaultValue={product?.price ?? ''} placeholder="150000" />
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Foto Produk</label>
-        <input name="image" type="file" accept="image/jpeg,image/png,image/webp"
-          className="text-sm text-gray-600" />
-        {product?.image_url && (
-          <p className="text-xs text-gray-400">Foto saat ini sudah ada. Upload baru untuk mengganti.</p>
-        )}
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Step Penggunaan</label>
+      <div>
+        <FieldLabel>Step Penggunaan</FieldLabel>
         <select name="usage_step" defaultValue={product?.usage_step ?? ''}
-          className="w-full border rounded-md px-3 py-2 text-sm">
-          <option value="">-- Pilih --</option>
+          className="w-full border border-black/15 rounded-md px-3 py-2 text-sm bg-white focus:outline-none focus:border-[var(--color-primary)]">
+          <option value="">-- Pilih step --</option>
           {USAGE_STEPS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Cocok untuk Jenis Kulit</label>
-        <div className="flex flex-wrap gap-2">
+      <div>
+        <FieldLabel>Cocok untuk Jenis Kulit</FieldLabel>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 mt-1">
           {SKIN_TYPES.map(({ value, label }) => (
-            <label key={value} className="flex items-center gap-1.5 text-sm">
+            <label key={value} className="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="skin_types" value={value}
-                defaultChecked={product?.skin_types.includes(value)} />
+                defaultChecked={product?.skin_types.includes(value)} className={checkboxCls} />
               {label}
             </label>
           ))}
         </div>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Manfaat / Concern</label>
-        <div className="flex flex-wrap gap-2">
+      <div>
+        <FieldLabel>Manfaat / Concern</FieldLabel>
+        <div className="flex flex-wrap gap-x-5 gap-y-2 mt-1">
           {CONCERNS.map(({ value, label }) => (
-            <label key={value} className="flex items-center gap-1.5 text-sm">
+            <label key={value} className="flex items-center gap-2 text-xs cursor-pointer">
               <input type="checkbox" name="concerns" value={value}
-                defaultChecked={product?.concerns.includes(value)} />
+                defaultChecked={product?.concerns.includes(value)} className={checkboxCls} />
               {label}
             </label>
           ))}
         </div>
       </div>
 
-      <div className="space-y-1">
-        <label className="text-sm font-medium">Bahan Utama (pisahkan dengan koma)</label>
+      <div>
+        <FieldLabel hint="Pisahkan dengan koma, contoh: niacinamide, vitamin-c, ceramide">Bahan Utama</FieldLabel>
         <Input name="ingredients" defaultValue={product?.ingredients.join(', ') ?? ''}
-          placeholder="niacinamide, vitamin-c, ceramide" />
+          placeholder="niacinamide, vitamin-c, ceramide" className={inputCls} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Link Tokopedia</label>
-          <Input name="tokopedia_url" defaultValue={product?.tokopedia_url ?? ''} />
+        <div>
+          <FieldLabel>Link Tokopedia</FieldLabel>
+          <Input name="tokopedia_url" defaultValue={product?.tokopedia_url ?? ''}
+            placeholder="https://tokopedia.com/..." className={inputCls} />
         </div>
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Link Shopee</label>
-          <Input name="shopee_url" defaultValue={product?.shopee_url ?? ''} />
+        <div>
+          <FieldLabel>Link Shopee</FieldLabel>
+          <Input name="shopee_url" defaultValue={product?.shopee_url ?? ''}
+            placeholder="https://shopee.co.id/..." className={inputCls} />
         </div>
       </div>
 
-      {state?.error && <p className="text-red-600 text-sm">{state.error}</p>}
-      {state?.success && <p className="text-green-600 text-sm">Produk disimpan!</p>}
-
-      <Button type="submit" disabled={pending}>
-        {pending ? 'Menyimpan...' : product ? 'Update Produk' : 'Tambah Produk'}
-      </Button>
+      <div className="flex items-center gap-4 pt-1">
+        <Button type="submit" disabled={pending}
+          className="bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity rounded-none text-label-caps tracking-widest px-6 py-2.5 h-auto text-[10px]">
+          {pending ? 'Menyimpan...' : product ? 'Update Produk' : 'Tambah Produk'}
+        </Button>
+        <StatusMessage state={state} />
+      </div>
     </form>
   )
 }

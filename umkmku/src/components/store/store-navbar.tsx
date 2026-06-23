@@ -59,7 +59,7 @@ export function StoreNavbar({ tenant, cartCount = 0 }: Props) {
               </Link>
             ))}
           </nav>
-          <Link href={`/store/${tenant.slug}/login`} aria-label="Account" className="text-[var(--color-accent)] hover:text-[var(--color-primary)] transition-colors">
+          <Link href={`/store/${tenant.slug}/profile`} aria-label="Account" className="text-[var(--color-accent)] hover:text-[var(--color-primary)] transition-colors">
             <User size={20} />
           </Link>
           <Link href={`/store/${tenant.slug}/cart`} aria-label="Cart" className="relative text-[var(--color-accent)] hover:text-[var(--color-primary)] transition-colors">

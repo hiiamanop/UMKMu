@@ -112,6 +112,7 @@ export async function saveTestimonial(slug: string, formData: FormData) {
   const author_name = formData.get('author_name')?.toString().trim()
   const author_title = formData.get('author_title')?.toString().trim() || null
   const quote = formData.get('quote')?.toString().trim()
+  const rating = Math.min(5, Math.max(1, parseInt(formData.get('rating')?.toString() ?? '5', 10)))
 
   if (!author_name || !quote) return { error: 'Nama dan kutipan wajib diisi' }
 
@@ -119,7 +120,7 @@ export async function saveTestimonial(slug: string, formData: FormData) {
   const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
   if (!tenant) return { error: 'Toko tidak ditemukan' }
 
-  const payload: Record<string, unknown> = { author_name, author_title, quote, tenant_id: tenant.id }
+  const payload: Record<string, unknown> = { author_name, author_title, quote, rating, tenant_id: tenant.id }
 
   for (const [field, key] of [['image_1', 'testimonial-img1'], ['image_2', 'testimonial-img2']] as const) {
     const file = formData.get(field) as File | null
@@ -156,6 +157,117 @@ export async function deleteTestimonial(slug: string, id: string) {
   if (!tenant) return { error: 'Toko tidak ditemukan' }
   const { error } = await supabase.from('testimonials').delete().eq('id', id).eq('tenant_id', tenant.id)
   if (error) return { error: 'Gagal menghapus testimonial' }
+  revalidatePath(`/store/${slug}`)
+  return { success: true }
+}
+
+async function uploadPageImage(
+  supabase: ReturnType<typeof createServiceClient>,
+  formData: FormData,
+  field: string,
+  key: string,
+  tenantId: string,
+): Promise<string | null | { error: string }> {
+  const file = formData.get(field) as File | null
+  if (!file || file.size === 0) return null
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
+    return { error: `Format gambar harus JPG, PNG, atau WebP` }
+  if (file.size > 5 * 1024 * 1024) return { error: `Ukuran gambar maksimal 5MB` }
+  const ext = file.name.split('.').pop()
+  const fileName = `${tenantId}/${key}-${Date.now()}.${ext}`
+  const { error: uploadError } = await supabase.storage.from('product-images').upload(fileName, file)
+  if (uploadError) return { error: `Gagal upload gambar` }
+  const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(fileName)
+  return urlData.publicUrl
+}
+
+export async function updateAboutPage(slug: string, formData: FormData) {
+  const supabase = createServiceClient()
+  const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
+  if (!tenant) return { error: 'Toko tidak ditemukan' }
+
+  const updates: Record<string, unknown> = {
+    page_about_story: formData.get('about_story')?.toString().trim() || null,
+    page_commitments: Array.from({ length: 4 }, (_, i) => ({
+      title: formData.get(`commitment_title_${i}`)?.toString().trim() ?? '',
+      body: formData.get(`commitment_body_${i}`)?.toString().trim() ?? '',
+    })),
+  }
+
+  for (const [field, key, col] of [
+    ['page_about_image', 'page-about', 'page_about_image_url'],
+    ['page_about_story_image', 'page-about-story', 'page_about_story_image_url'],
+  ]) {
+    const result = await uploadPageImage(supabase, formData, field, key, tenant.id)
+    if (result && typeof result === 'object' && 'error' in result) return result
+    if (typeof result === 'string') updates[col] = result
+  }
+
+  const { error } = await supabase.from('tenants').update(updates).eq('slug', slug)
+  if (error) return { error: 'Gagal menyimpan' }
+  revalidatePath(`/store/${slug}`)
+  return { success: true }
+}
+
+export async function updateIngredientsPage(slug: string, formData: FormData) {
+  const supabase = createServiceClient()
+  const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
+  if (!tenant) return { error: 'Toko tidak ditemukan' }
+
+  const count = parseInt(formData.get('ingredient_count')?.toString() ?? '0', 10)
+  const page_ingredients_items = Array.from({ length: count }, (_, i) => ({
+    name: formData.get(`ingredient_name_${i}`)?.toString().trim() ?? '',
+    description: formData.get(`ingredient_desc_${i}`)?.toString().trim() ?? '',
+  })).filter(item => item.name)
+
+  const updates: Record<string, unknown> = {
+    page_ingredients_title: formData.get('ingredients_title')?.toString().trim() || null,
+    page_ingredients_items: page_ingredients_items.length ? page_ingredients_items : null,
+    page_process_steps: Array.from({ length: 3 }, (_, i) => ({
+      title: formData.get(`step_title_${i}`)?.toString().trim() ?? '',
+      body: formData.get(`step_body_${i}`)?.toString().trim() ?? '',
+    })),
+  }
+
+  const result = await uploadPageImage(supabase, formData, 'page_ingredients_image', 'page-ingredients', tenant.id)
+  if (result && typeof result === 'object' && 'error' in result) return result
+  if (typeof result === 'string') updates['page_ingredients_image_url'] = result
+
+  const { error } = await supabase.from('tenants').update(updates).eq('slug', slug)
+  if (error) return { error: 'Gagal menyimpan' }
+  revalidatePath(`/store/${slug}`)
+  return { success: true }
+}
+
+export async function updateSustainabilityPage(slug: string, formData: FormData) {
+  const supabase = createServiceClient()
+  const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
+  if (!tenant) return { error: 'Toko tidak ditemukan' }
+
+  const updates: Record<string, unknown> = {
+    page_sustainability: Array.from({ length: 3 }, (_, i) => ({
+      title: formData.get(`initiative_title_${i}`)?.toString().trim() ?? '',
+      body: formData.get(`initiative_body_${i}`)?.toString().trim() ?? '',
+    })),
+    page_stats: Array.from({ length: 4 }, (_, i) => ({
+      value: formData.get(`stat_value_${i}`)?.toString().trim() ?? '',
+      label: formData.get(`stat_label_${i}`)?.toString().trim() ?? '',
+    })),
+    page_sustainability_story_title: formData.get('story_title')?.toString().trim() || null,
+    page_sustainability_story_body: formData.get('story_body')?.toString().trim() || null,
+  }
+
+  for (const [field, key, col] of [
+    ['page_sustainability_image', 'page-sustainability', 'page_sustainability_image_url'],
+    ['page_sustainability_story_image', 'page-sust-story', 'page_sustainability_story_image_url'],
+  ]) {
+    const result = await uploadPageImage(supabase, formData, field, key, tenant.id)
+    if (result && typeof result === 'object' && 'error' in result) return result
+    if (typeof result === 'string') updates[col] = result
+  }
+
+  const { error } = await supabase.from('tenants').update(updates).eq('slug', slug)
+  if (error) return { error: 'Gagal menyimpan' }
   revalidatePath(`/store/${slug}`)
   return { success: true }
 }

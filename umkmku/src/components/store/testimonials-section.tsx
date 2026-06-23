@@ -12,6 +12,9 @@ interface Props {
 
 export function TestimonialsSection({ tenant, testimonials }: Props) {
   const [index, setIndex] = useState(0)
+  const avgRating = testimonials.length
+    ? (testimonials.reduce((sum, t) => sum + (t.rating ?? 5), 0) / testimonials.length).toFixed(1)
+    : '5.0'
 
   if (testimonials.length === 0) {
     return (
@@ -73,6 +76,11 @@ export function TestimonialsSection({ tenant, testimonials }: Props) {
               <p className="text-headline-md italic text-white leading-relaxed mb-6 transition-opacity duration-500">
                 {current.quote}
               </p>
+              <div className="flex items-center gap-2 mb-3">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <span key={i} className={`text-lg ${i < (current.rating ?? 5) ? 'text-white' : 'text-white/20'}`}>★</span>
+                ))}
+              </div>
               <p className="text-label-caps text-white/60">
                 {current.author_name}
                 {current.author_title && ` — ${current.author_title}`}
@@ -83,7 +91,7 @@ export function TestimonialsSection({ tenant, testimonials }: Props) {
               <div>
                 <p className="text-label-caps text-[10px] text-white/40 mb-2">Kepuasan Pelanggan</p>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-headline-md text-white text-3xl">4.8</span>
+                  <span className="text-headline-md text-white text-3xl">{avgRating}</span>
                   <span className="text-white/40 text-lg">/ 5</span>
                 </div>
               </div>

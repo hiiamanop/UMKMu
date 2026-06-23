@@ -27,6 +27,32 @@ export interface Tenant {
   about_image_2_url: string | null
   cta_image_url: string | null
   footer_image_url: string | null
+  page_about_story: string | null
+  page_commitments: PageItem[] | null
+  page_process_steps: PageItem[] | null
+  page_sustainability: PageItem[] | null
+  page_stats: PageStat[] | null
+  page_about_image_url: string | null
+  page_about_story_image_url: string | null
+  page_ingredients_title: string | null
+  page_ingredients_items: IngredientItem[] | null
+  page_ingredients_image_url: string | null
+  page_sustainability_image_url: string | null
+  page_sustainability_story_image_url: string | null
+  page_sustainability_story_title: string | null
+  page_sustainability_story_body: string | null
+}
+
+export interface IngredientItem { name: string; description: string }
+
+export interface PageItem {
+  title: string
+  body: string
+}
+
+export interface PageStat {
+  value: string
+  label: string
 }
 
 export interface Testimonial {
@@ -38,6 +64,7 @@ export interface Testimonial {
   quote: string
   image_1_url: string | null
   image_2_url: string | null
+  rating: number
   sort_order: number
   is_active: boolean
 }

@@ -12,5 +12,10 @@ export default async function DashboardOverviewPage({ params }: Props) {
 
   if (!data) notFound()
 
-  return <BrandForm tenant={data.tenant} />
+  return (
+    <>
+      <h1 className="text-headline-lg italic mb-8">Brand &amp; Kontak</h1>
+      <BrandForm tenant={data.tenant} />
+    </>
+  )
 }

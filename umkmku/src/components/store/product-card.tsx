@@ -1,19 +1,27 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { Heart, ShoppingCart } from 'lucide-react'
 import { useState } from 'react'
 import type { Product } from '@/lib/supabase/types'
 
 interface Props {
   product: Product
+  slug?: string
 }
 
-export function ProductCard({ product }: Props) {
+export function ProductCard({ product, slug }: Props) {
   const [wished, setWished] = useState(false)
   const marketplaceUrl = product.tokopedia_url || product.shopee_url
+  const detailUrl = slug ? `/store/${slug}/products/${product.id}` : undefined
+
+  const Wrapper = detailUrl
+    ? ({ children }: { children: React.ReactNode }) => <Link href={detailUrl}>{children}</Link>
+    : ({ children }: { children: React.ReactNode }) => <>{children}</>
 
   return (
+    <Wrapper>
     <div className="group cursor-pointer">
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-[var(--color-secondary)] mb-4">
@@ -31,7 +39,7 @@ export function ProductCard({ product }: Props) {
 
         {/* Wishlist icon */}
         <button
-          onClick={() => setWished((v) => !v)}
+          onClick={(e) => { e.preventDefault(); setWished((v) => !v) }}
           aria-label="Wishlist"
           className="absolute top-3 right-3 bg-white/80 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
         >
@@ -78,5 +86,6 @@ export function ProductCard({ product }: Props) {
         )}
       </div>
     </div>
+    </Wrapper>
   )
 }

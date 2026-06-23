@@ -35,7 +35,7 @@ export default async function StorePage({ params }: Props) {
       <Hero tenant={tenant} products={products} />
       <AboutSection tenant={tenant} />
       <CtaBanner tenant={tenant} />
-      <ProductGrid products={products} />
+      <ProductGrid products={products} slug={tenant.slug} />
       <IngredientsSection products={products} />
       <TestimonialsSection tenant={tenant} testimonials={(testimonials ?? []) as Testimonial[]} />
       <StoreFooter tenant={tenant} />
