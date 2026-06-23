@@ -2,41 +2,70 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const tabs = [
+const topTabs = [
   { label: 'Brand & Kontak', path: '' },
   { label: 'Produk', path: '/products' },
   { label: 'Tampilan', path: '/appearance' },
   { label: 'Chatbot', path: '/chatbot' },
 ]
 
+const pageSubTabs = [
+  { label: 'Ingredients', path: '/pages/ingredients' },
+  { label: 'Sustainability', path: '/pages/sustainability' },
+  { label: 'About', path: '/pages/about' },
+]
+
+const linkCls = 'px-4 py-2.5 text-xs tracking-widest uppercase font-sans transition-all rounded-sm'
+const activeCls = 'bg-white/15 text-white font-semibold'
+const inactiveCls = 'text-white/50 hover:text-white/80 hover:bg-white/5'
+
 export function DashboardNav({ slug }: { slug: string }) {
   const pathname = usePathname()
+  const isPagesActive = pathname.startsWith(`/${slug}/pages`)
+  const [pagesOpen, setPagesOpen] = useState(isPagesActive)
 
   return (
-    <nav className="flex gap-1 bg-gray-100 p-1 rounded-lg">
-      {tabs.map((tab) => {
+    <nav className="flex flex-col gap-1">
+      {topTabs.map((tab) => {
         const href = `/${slug}${tab.path}`
         const isActive = tab.path === ''
           ? pathname === `/${slug}` || pathname === `/${slug}/`
           : pathname.startsWith(`/${slug}${tab.path}`)
 
         return (
-          <Link
-            key={tab.path}
-            href={href}
-            className={cn(
-              'flex-1 text-center text-sm py-2 px-3 rounded-md transition-colors',
-              isActive
-                ? 'bg-white font-medium shadow-sm'
-                : 'text-gray-500 hover:text-gray-900'
-            )}
-          >
+          <Link key={tab.path} href={href} className={cn(linkCls, isActive ? activeCls : inactiveCls)}>
             {tab.label}
           </Link>
         )
       })}
+
+      {/* Halaman dropdown */}
+      <button
+        type="button"
+        onClick={() => setPagesOpen(v => !v)}
+        className={cn(linkCls, 'flex items-center justify-between w-full text-left', isPagesActive ? activeCls : inactiveCls)}
+      >
+        Halaman
+        <ChevronDown size={12} className={cn('transition-transform', pagesOpen ? 'rotate-180' : '')} />
+      </button>
+
+      {pagesOpen && (
+        <div className="ml-3 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+          {pageSubTabs.map((sub) => {
+            const href = `/${slug}${sub.path}`
+            const isActive = pathname.startsWith(href)
+            return (
+              <Link key={sub.path} href={href} className={cn(linkCls, 'py-2', isActive ? activeCls : inactiveCls)}>
+                {sub.label}
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </nav>
   )
 }

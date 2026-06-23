@@ -9,8 +9,9 @@ export function middleware(request: NextRequest) {
 
   const url = request.nextUrl.clone()
 
-  // API routes tidak perlu di-rewrite — biarkan Next.js handle langsung
+  // API routes dan /store/* tidak perlu di-rewrite
   if (url.pathname.startsWith('/api/')) return NextResponse.next()
+  if (url.pathname.startsWith('/store/')) return NextResponse.next()
   const originalPath = url.pathname
   url.pathname = `/store/${slug}${originalPath}`
 

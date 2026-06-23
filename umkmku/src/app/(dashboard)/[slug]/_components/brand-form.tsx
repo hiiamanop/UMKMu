@@ -6,93 +6,74 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import type { Tenant } from '@/lib/supabase/types'
 import { updateBrand } from '../actions'
+import { FormSection, FieldLabel, StatusMessage } from './form-section'
 
-interface Props {
-  tenant: Tenant
-}
-
-export function BrandForm({ tenant }: Props) {
+export function BrandForm({ tenant }: { tenant: Tenant }) {
   const [state, action, pending] = useActionState(
-    async (_: unknown, formData: FormData) => {
-      return updateBrand(tenant.slug, formData)
-    },
+    async (_: unknown, formData: FormData) => updateBrand(tenant.slug, formData),
     null
   )
 
   return (
-    <div className="bg-white rounded-xl p-6 space-y-6">
-      <h2 className="font-semibold text-lg">Brand & Kontak</h2>
-
-      <form action={action} className="space-y-4">
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Nama Brand *</label>
-          <Input name="brand_name" defaultValue={tenant.brand_name} required />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Tagline</label>
-          <Input
-            name="tagline"
-            defaultValue={tenant.tagline ?? ''}
-            placeholder="Tagline singkat brand kamu"
-          />
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm font-medium">Deskripsi Brand</label>
-          <Textarea
-            name="description"
-            defaultValue={tenant.description ?? ''}
-            placeholder="Ceritakan brand kamu..."
-            className="min-h-[100px]"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Nomor WhatsApp</label>
-            <Input
-              name="whatsapp_number"
-              defaultValue={tenant.whatsapp_number ?? ''}
-              placeholder="08xxxxxxxxxx"
-            />
+    <form action={action} className="space-y-0">
+      <FormSection title="Identitas Brand">
+        <div className="grid grid-cols-1 gap-5">
+          <div>
+            <FieldLabel>Nama Brand *</FieldLabel>
+            <Input name="brand_name" defaultValue={tenant.brand_name} required
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Instagram URL</label>
-            <Input
-              name="instagram_url"
-              defaultValue={tenant.instagram_url ?? ''}
-              placeholder="https://instagram.com/..."
-            />
+          <div>
+            <FieldLabel hint="Tampil sebagai headline di hero halaman toko">Tagline</FieldLabel>
+            <Input name="tagline" defaultValue={tenant.tagline ?? ''}
+              placeholder="Natural beauty, timeless glow"
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
+          </div>
+          <div>
+            <FieldLabel hint="Muncul di section About dan footer toko">Deskripsi Brand</FieldLabel>
+            <Textarea name="description" defaultValue={tenant.description ?? ''}
+              placeholder="Ceritakan kisah dan nilai brand kamu..."
+              className="min-h-[120px] bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
           </div>
         </div>
+      </FormSection>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Tokopedia Store URL</label>
-            <Input
-              name="tokopedia_url"
-              defaultValue={tenant.tokopedia_url ?? ''}
-              placeholder="https://tokopedia.com/..."
-            />
+      <FormSection title="Kontak & Marketplace">
+        <div className="grid grid-cols-2 gap-5">
+          <div>
+            <FieldLabel hint="Digunakan untuk tombol WhatsApp di toko">Nomor WhatsApp</FieldLabel>
+            <Input name="whatsapp_number" defaultValue={tenant.whatsapp_number ?? ''}
+              placeholder="628xxxxxxxxx"
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
           </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium">Shopee Store URL</label>
-            <Input
-              name="shopee_url"
-              defaultValue={tenant.shopee_url ?? ''}
-              placeholder="https://shopee.co.id/..."
-            />
+          <div>
+            <FieldLabel>Instagram URL</FieldLabel>
+            <Input name="instagram_url" defaultValue={tenant.instagram_url ?? ''}
+              placeholder="https://instagram.com/brandkamu"
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
+          </div>
+          <div>
+            <FieldLabel hint="URL halaman toko kamu di Tokopedia">Tokopedia Store</FieldLabel>
+            <Input name="tokopedia_url" defaultValue={tenant.tokopedia_url ?? ''}
+              placeholder="https://tokopedia.com/brandkamu"
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
+          </div>
+          <div>
+            <FieldLabel hint="URL halaman toko kamu di Shopee">Shopee Store</FieldLabel>
+            <Input name="shopee_url" defaultValue={tenant.shopee_url ?? ''}
+              placeholder="https://shopee.co.id/brandkamu"
+              className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
           </div>
         </div>
+      </FormSection>
 
-        {state?.error && <p className="text-red-600 text-sm">{state.error}</p>}
-        {state?.success && <p className="text-green-600 text-sm">Perubahan disimpan!</p>}
-
-        <Button type="submit" disabled={pending}>
+      <div className="flex items-center gap-4 pt-2">
+        <Button type="submit" disabled={pending}
+          className="bg-[var(--color-primary)] text-white hover:opacity-90 transition-opacity rounded-none text-label-caps tracking-widest px-8 py-3 h-auto">
           {pending ? 'Menyimpan...' : 'Simpan Perubahan'}
         </Button>
-      </form>
-    </div>
+        <StatusMessage state={state} />
+      </div>
+    </form>
   )
 }

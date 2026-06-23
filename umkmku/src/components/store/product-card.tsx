@@ -1,116 +1,91 @@
+'use client'
+
 import Image from 'next/image'
+import Link from 'next/link'
+import { Heart, ShoppingCart } from 'lucide-react'
+import { useState } from 'react'
 import type { Product } from '@/lib/supabase/types'
 
 interface Props {
   product: Product
+  slug?: string
 }
 
-const CONCERN_LABELS: Record<string, string> = {
-  acne: 'Anti Jerawat',
-  brightening: 'Mencerahkan',
-  'anti-aging': 'Anti Aging',
-  hydrating: 'Melembapkan',
-  pores: 'Mengecilkan Pori',
-  soothing: 'Menenangkan',
-  firming: 'Mengencangkan',
-}
+export function ProductCard({ product, slug }: Props) {
+  const [wished, setWished] = useState(false)
+  const marketplaceUrl = product.tokopedia_url || product.shopee_url
+  const detailUrl = slug ? `/store/${slug}/products/${product.id}` : undefined
 
-const SKIN_TYPE_LABELS: Record<string, string> = {
-  oily: 'Berminyak',
-  combination: 'Kombinasi',
-  dry: 'Kering',
-  sensitive: 'Sensitif',
-  all: 'Semua Jenis Kulit',
-}
-
-export function ProductCard({ product }: Props) {
-  const hasMarketplaceLink = product.tokopedia_url || product.shopee_url
+  const Wrapper = detailUrl
+    ? ({ children }: { children: React.ReactNode }) => <Link href={detailUrl}>{children}</Link>
+    : ({ children }: { children: React.ReactNode }) => <>{children}</>
 
   return (
-    <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-      <div className="relative aspect-square bg-gray-50">
+    <Wrapper>
+    <div className="group cursor-pointer">
+      {/* Image */}
+      <div className="relative aspect-square overflow-hidden bg-[var(--color-secondary)] mb-4">
         {product.image_url ? (
           <Image
             src={product.image_url}
             alt={product.name}
             fill
-            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-gray-300 text-4xl">🧴</span>
-          </div>
+          <div className="absolute inset-0 flex items-center justify-center text-5xl select-none opacity-30">🧴</div>
         )}
+
+        {/* Wishlist icon */}
+        <button
+          onClick={(e) => { e.preventDefault(); setWished((v) => !v) }}
+          aria-label="Wishlist"
+          className="absolute top-3 right-3 bg-white/80 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Heart
+            size={16}
+            className={wished ? 'fill-[var(--color-primary)] text-[var(--color-primary)]' : 'text-[var(--color-accent)]'}
+          />
+        </button>
       </div>
 
-      <div className="p-4 space-y-3">
+      {/* Info row */}
+      <div className="flex justify-between items-start">
         <div>
-          <h3 className="font-semibold text-gray-900">{product.name}</h3>
-          {product.usage_step && (
-            <p className="text-xs text-[var(--color-accent)] uppercase tracking-wide mt-0.5">
-              {product.usage_step}
-            </p>
-          )}
-        </div>
-
-        {product.description && (
-          <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
-        )}
-
-        {product.concerns.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {product.concerns.slice(0, 2).map((concern) => (
-              <span
-                key={concern}
-                className="text-xs px-2 py-0.5 bg-[var(--color-secondary)] text-[var(--color-primary)] rounded-full"
-              >
-                {CONCERN_LABELS[concern] ?? concern}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {product.skin_types.length > 0 && !product.skin_types.includes('all') && (
-          <p className="text-xs text-gray-400">
-            Untuk kulit: {product.skin_types.map(t => SKIN_TYPE_LABELS[t] ?? t).join(', ')}
-          </p>
-        )}
-
-        <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+          <h4 className="text-headline-md italic text-[var(--color-accent)] mb-1 leading-snug">
+            {product.name}
+          </h4>
           {product.price ? (
-            <span className="font-bold text-[var(--color-primary)]">
-              Rp {product.price.toLocaleString('id-ID')}
-            </span>
+            <p className="text-label-caps text-[var(--color-accent)]/60">
+              IDR {product.price.toLocaleString('id-ID')}
+            </p>
           ) : (
-            <span className="text-sm text-gray-400">Hubungi untuk harga</span>
-          )}
-
-          {hasMarketplaceLink && (
-            <div className="flex gap-2">
-              {product.tokopedia_url && (
-                <a
-                  href={product.tokopedia_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-                >
-                  Tokopedia
-                </a>
-              )}
-              {product.shopee_url && (
-                <a
-                  href={product.shopee_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs px-3 py-1.5 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors"
-                >
-                  Shopee
-                </a>
-              )}
-            </div>
+            <p className="text-label-caps text-[var(--color-accent)]/40">Hubungi untuk harga</p>
           )}
         </div>
+
+        {/* Square add-to-cart button */}
+        {marketplaceUrl ? (
+          <a
+            href={marketplaceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Beli"
+            className="w-10 h-10 border border-black/20 flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors shrink-0"
+          >
+            <ShoppingCart size={16} />
+          </a>
+        ) : (
+          <button
+            aria-label="Beli"
+            className="w-10 h-10 border border-black/20 flex items-center justify-center hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors shrink-0"
+          >
+            <ShoppingCart size={16} />
+          </button>
+        )}
       </div>
     </div>
+    </Wrapper>
   )
 }
