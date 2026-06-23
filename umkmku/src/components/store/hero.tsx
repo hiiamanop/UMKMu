@@ -1,16 +1,13 @@
 import Image from 'next/image'
-import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 import type { Tenant, Product } from '@/lib/supabase/types'
+import { HeroProductCarousel } from './hero-product-carousel'
 
 interface Props {
   tenant: Tenant
-  featuredProduct?: Product | null
+  products: Product[]
 }
 
-export function Hero({ tenant, featuredProduct }: Props) {
-  const shopUrl = `/store/${tenant.slug}/shop`
-
+export function Hero({ tenant, products }: Props) {
   return (
     <section className="grid grid-cols-1 md:grid-cols-12 w-full min-h-[600px] md:min-h-[720px]">
       {/* LEFT 7/12 — lifestyle / hero image */}
@@ -27,7 +24,6 @@ export function Hero({ tenant, featuredProduct }: Props) {
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)] to-[var(--color-primary)]/60" />
         )}
-        {/* Dark overlay */}
         <div className="absolute inset-0 bg-black/20" />
 
         {/* Text bottom-left */}
@@ -51,73 +47,18 @@ export function Hero({ tenant, featuredProduct }: Props) {
         </div>
       </div>
 
-      {/* RIGHT 5/12 — featured product */}
+      {/* RIGHT 5/12 — product carousel */}
       <div className="md:col-span-5 bg-[var(--color-secondary)] flex flex-col justify-center items-center px-8 md:px-12 py-16">
-        <div className="max-w-xs w-full">
-          {featuredProduct ? (
-            <>
-              <div className="mb-6">
-                <span className="text-label-caps text-[var(--color-primary)]">
-                  {featuredProduct.usage_step ?? 'PRODUK UNGGULAN'}
-                </span>
-                {featuredProduct.description && (
-                  <p className="mt-3 text-body-md text-[var(--color-accent)]/70 leading-relaxed">
-                    {featuredProduct.description}
-                  </p>
-                )}
-              </div>
-              <div className="relative aspect-[4/5] w-full mb-8 bg-white/50">
-                {featuredProduct.image_url ? (
-                  <Image
-                    src={featuredProduct.image_url}
-                    alt={featuredProduct.name}
-                    fill
-                    sizes="(max-width: 768px) 80vw, 30vw"
-                    className="object-contain"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-6xl">🧴</div>
-                )}
-              </div>
-              <div className="mb-6">
-                <p className="text-headline-md italic text-[var(--color-accent)] mb-1">
-                  {featuredProduct.name}
-                </p>
-                {featuredProduct.price && (
-                  <p className="text-label-caps text-[var(--color-accent)]/60">
-                    IDR {featuredProduct.price.toLocaleString('id-ID')}
-                  </p>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="mb-8">
-              <span className="text-label-caps text-[var(--color-primary)] mb-4 block">SKINCARE ALAMI</span>
-              <p className="text-body-md text-[var(--color-accent)]/70 leading-relaxed">
-                {tenant.description ?? 'Produk perawatan kulit terbaik dengan bahan-bahan alami pilihan.'}
-              </p>
-            </div>
-          )}
-
-          <Link
-            href={shopUrl}
-            className="w-full py-4 border border-[var(--color-accent)]/30 bg-[var(--color-primary)] text-white text-label-caps tracking-widest flex items-center justify-center gap-4 hover:opacity-90 transition-opacity group"
-          >
-            BUY NOW
-            <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-
-          {tenant.whatsapp_number && (
-            <a
-              href={`https://wa.me/${tenant.whatsapp_number.replace(/[^0-9]/g, '')}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 w-full py-3 border border-[var(--color-accent)]/20 text-label-caps text-[var(--color-accent)]/70 flex items-center justify-center hover:border-[var(--color-accent)] transition-colors"
-            >
-              Hubungi Kami
-            </a>
-          )}
-        </div>
+        {products.length > 0 ? (
+          <HeroProductCarousel products={products} slug={tenant.slug} />
+        ) : (
+          <div className="max-w-xs w-full">
+            <span className="text-label-caps text-[var(--color-primary)] mb-4 block">SKINCARE ALAMI</span>
+            <p className="text-body-md text-[var(--color-accent)]/70 leading-relaxed">
+              {tenant.description ?? 'Produk perawatan kulit terbaik dengan bahan-bahan alami pilihan.'}
+            </p>
+          </div>
+        )}
       </div>
     </section>
   )

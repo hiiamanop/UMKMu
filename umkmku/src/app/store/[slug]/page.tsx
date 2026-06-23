@@ -32,7 +32,7 @@ export default async function StorePage({ params }: Props) {
 
   return (
     <>
-      <Hero tenant={tenant} featuredProduct={products[0] ?? null} />
+      <Hero tenant={tenant} products={products} />
       <AboutSection tenant={tenant} />
       <CtaBanner tenant={tenant} />
       <ProductGrid products={products} />
