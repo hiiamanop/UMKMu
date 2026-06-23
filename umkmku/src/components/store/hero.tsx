@@ -20,6 +20,7 @@ export function Hero({ tenant, featuredProduct }: Props) {
             src={tenant.hero_image_url}
             alt={tenant.brand_name}
             fill
+            sizes="(max-width: 768px) 100vw, 58vw"
             className="object-cover"
             priority
           />
@@ -71,6 +72,7 @@ export function Hero({ tenant, featuredProduct }: Props) {
                     src={featuredProduct.image_url}
                     alt={featuredProduct.name}
                     fill
+                    sizes="(max-width: 768px) 80vw, 30vw"
                     className="object-contain"
                   />
                 ) : (

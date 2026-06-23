@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getTenantBySlug } from '@/lib/tenant'
+import { createServiceClient } from '@/lib/supabase/server'
 import { Hero } from '@/components/store/hero'
 import { AboutSection } from '@/components/store/about-section'
 import { CtaBanner } from '@/components/store/cta-banner'
@@ -8,6 +9,7 @@ import { IngredientsSection } from '@/components/store/ingredients-section'
 import { TestimonialsSection } from '@/components/store/testimonials-section'
 import { StoreFooter } from '@/components/store/store-footer'
 import { ChatbotWidgetLoader } from '@/components/store/chatbot-widget-loader'
+import type { Testimonial } from '@/lib/supabase/types'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -16,10 +18,17 @@ interface Props {
 export default async function StorePage({ params }: Props) {
   const { slug } = await params
   const data = await getTenantBySlug(slug)
-
   if (!data) notFound()
 
   const { tenant, products } = data
+
+  const supabase = createServiceClient()
+  const { data: testimonials } = await supabase
+    .from('testimonials')
+    .select('*')
+    .eq('tenant_id', tenant.id)
+    .eq('is_active', true)
+    .order('sort_order')
 
   return (
     <>
@@ -28,7 +37,7 @@ export default async function StorePage({ params }: Props) {
       <CtaBanner tenant={tenant} />
       <ProductGrid products={products} />
       <IngredientsSection products={products} />
-      <TestimonialsSection tenant={tenant} />
+      <TestimonialsSection tenant={tenant} testimonials={(testimonials ?? []) as Testimonial[]} />
       <StoreFooter tenant={tenant} />
       <ChatbotWidgetLoader tenant={tenant} products={products} />
     </>

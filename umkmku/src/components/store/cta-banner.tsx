@@ -10,11 +10,13 @@ export function CtaBanner({ tenant }: Props) {
   return (
     <section className="w-full h-[500px] relative overflow-hidden">
       {/* Background */}
-      {tenant.hero_image_url ? (
+      {(tenant.cta_image_url ?? tenant.hero_image_url) ? (
         <Image
-          src={tenant.hero_image_url}
+          src={tenant.cta_image_url ?? tenant.hero_image_url!}
           alt="Collection banner"
           fill
+          sizes="100vw"
+          loading="eager"
           className="object-cover"
         />
       ) : (

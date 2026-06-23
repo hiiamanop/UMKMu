@@ -23,6 +23,23 @@ export interface Tenant {
   category: TenantCategory
   is_active: boolean
   owner_email: string | null
+  about_image_1_url: string | null
+  about_image_2_url: string | null
+  cta_image_url: string | null
+  footer_image_url: string | null
+}
+
+export interface Testimonial {
+  id: string
+  tenant_id: string
+  created_at: string
+  author_name: string
+  author_title: string | null
+  quote: string
+  image_1_url: string | null
+  image_2_url: string | null
+  sort_order: number
+  is_active: boolean
 }
 
 // Skincare-specific data

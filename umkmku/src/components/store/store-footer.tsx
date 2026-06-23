@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import type { Tenant } from '@/lib/supabase/types'
 
 interface Props {
@@ -37,9 +38,15 @@ export function StoreFooter({ tenant }: Props) {
           ))}
         </div>
 
-        {/* Brand name center image */}
-        <div className="md:col-span-2 relative h-48 overflow-hidden flex items-center justify-center bg-white/5">
-          <span className="text-headline-lg italic text-white/60">{tenant.brand_name}</span>
+        {/* Center image / brand name */}
+        <div className="md:col-span-2 relative h-48 overflow-hidden">
+          {tenant.footer_image_url ? (
+            <Image src={tenant.footer_image_url} alt={tenant.brand_name} fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+          ) : (
+            <div className="w-full h-full bg-white/5 flex items-center justify-center">
+              <span className="text-headline-lg italic text-white/40">{tenant.brand_name}</span>
+            </div>
+          )}
         </div>
 
         {/* Contact + social */}

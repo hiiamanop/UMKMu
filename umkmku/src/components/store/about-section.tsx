@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Plus, Minus } from 'lucide-react'
 import type { Tenant } from '@/lib/supabase/types'
 
@@ -69,11 +70,19 @@ export function AboutSection({ tenant }: Props) {
 
           {/* Staggered 2-col image grid */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="aspect-[3/4] overflow-hidden">
-              <div className="w-full h-full bg-[var(--color-primary)]/20" style={{ backgroundImage: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)' }} />
+            <div className="aspect-[3/4] overflow-hidden relative">
+              {tenant.about_image_1_url ? (
+                <Image src={tenant.about_image_1_url} alt="About 1" fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)' }} />
+              )}
             </div>
-            <div className="aspect-[3/4] overflow-hidden mt-12 bg-[var(--color-accent)]/30">
-              <div className="w-full h-full" style={{ backgroundImage: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 100%)' }} />
+            <div className="aspect-[3/4] overflow-hidden mt-12 relative">
+              {tenant.about_image_2_url ? (
+                <Image src={tenant.about_image_2_url} alt="About 2" fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover" />
+              ) : (
+                <div className="w-full h-full" style={{ background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-secondary) 100%)' }} />
+              )}
             </div>
           </div>
         </div>
