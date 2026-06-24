@@ -23,6 +23,7 @@ export interface Tenant {
   category: TenantCategory
   is_active: boolean
   owner_email: string | null
+  owner_id: string | null
   about_image_1_url: string | null
   about_image_2_url: string | null
   cta_image_url: string | null
@@ -131,6 +132,8 @@ export interface Product {
   shopee_url: string | null
   sort_order: number
   is_active: boolean
+  stock_quantity: number | null
+  is_preorder: boolean
 }
 
 export interface ChatMessage {
@@ -165,6 +168,7 @@ export interface UserProfile {
   skin_type: string | null
   skin_concerns: string[] | null
   avatar_url: string | null
+  role: 'customer' | 'merchant' | 'super_admin'
 }
 
 export interface Wishlist {
@@ -180,6 +184,7 @@ export interface OrderChat {
   created_at: string
   order_id: string
   role: 'user' | 'assistant'
+  sender_type: 'customer' | 'ai' | 'merchant'
   content: string | null
   attachment_url: string | null
 }

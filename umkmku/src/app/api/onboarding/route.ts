@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { getAIModel } from '@/lib/ai/provider'
 import { generateSlug, getOnboardingSystemPrompt } from '@/lib/ai/onboarding'
+import { geminiChat } from '@/lib/ai/gemini'
 import { createServiceClient } from '@/lib/supabase/server'
 import { validateCategoryData, type CategoryType } from '@/lib/categories'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -36,13 +37,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Extract config dari AI menggunakan onboarding prompt (untuk brand + products extract)
+    // Extract config dari AI — coba Ollama dulu, fallback ke Gemini 2.0 Flash
     const onboardingPrompt = getOnboardingSystemPrompt(category)
-    const { text } = await generateText({
-      model: getAIModel(),
-      system: onboardingPrompt,
-      prompt: description,
-    })
+    let text: string
+    try {
+      const result = await generateText({ model: getAIModel(), system: onboardingPrompt, prompt: description })
+      text = result.text
+    } catch {
+      // Ollama tidak tersedia, gunakan Gemini 2.0 Flash
+      text = await geminiChat([{ role: 'user', content: description }], onboardingPrompt)
+    }
 
     // Parse JSON dari response (handle ```json blocks)
     const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/(\{[\s\S]*\})/s)

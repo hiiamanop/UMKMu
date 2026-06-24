@@ -19,9 +19,13 @@ export async function upsertProduct(slug: string, productId: string | null, form
   const how_to_use = formData.get('how_to_use')?.toString().trim() || null
   const tokopedia_url = formData.get('tokopedia_url')?.toString().trim() || null
   const shopee_url = formData.get('shopee_url')?.toString().trim() || null
+  const stockRaw = formData.get('stock_quantity')?.toString()
+  const stock_quantity = stockRaw && stockRaw.trim() !== '' ? parseInt(stockRaw, 10) : null
+  const is_preorder = formData.get('is_preorder') === 'true'
 
   if (!name || name.length < 2) return { error: 'Nama produk minimal 2 karakter' }
   if (price !== null && (isNaN(price) || price < 0)) return { error: 'Harga tidak valid' }
+  if (stock_quantity !== null && (isNaN(stock_quantity) || stock_quantity < 0)) return { error: 'Jumlah stok tidak valid' }
 
   const supabase = createServiceClient()
 
@@ -74,6 +78,8 @@ export async function upsertProduct(slug: string, productId: string | null, form
     how_to_use,
     tokopedia_url,
     shopee_url,
+    stock_quantity,
+    is_preorder,
     ...(image_url ? { image_url } : {}),
   }
 

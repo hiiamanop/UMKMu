@@ -10,6 +10,7 @@ interface Message {
   id: string
   created_at: string
   role: 'user' | 'assistant'
+  sender_type?: 'customer' | 'ai' | 'merchant'
   content: string | null
   attachment_url: string | null
 }
@@ -152,13 +153,21 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
 
       {/* Messages */}
       <div className="flex-1 max-w-[720px] w-full mx-auto px-4 py-6 space-y-4">
-        {messages.map(msg => (
+        {messages.map(msg => {
+          const isMerchant = msg.sender_type === 'merchant'
+          return (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
               msg.role === 'user'
                 ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
                 : 'bg-white border border-black/8 text-[var(--color-accent)] rounded-tl-sm'
             }`}>
+              {/* Label pengirim untuk pesan dari toko */}
+              {msg.role === 'assistant' && (
+                <p className="text-[9px] tracking-widest uppercase font-sans mb-1.5 text-[var(--color-accent)]/40">
+                  {isMerchant ? '👤 Tim Toko' : '🤖 AI Assistant'}
+                </p>
+              )}
               {/* QRIS image from assistant */}
               {msg.role === 'assistant' && msg.attachment_url && (
                 <div className="mb-3 bg-white p-3 rounded-lg inline-block">
@@ -191,7 +200,8 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
               </p>
             </div>
           </div>
-        ))}
+          )
+        })}
 
         {sending && (
           <div className="flex justify-start">

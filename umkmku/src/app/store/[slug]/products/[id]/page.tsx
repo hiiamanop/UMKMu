@@ -108,7 +108,7 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
 
             {/* Interactive: buy button + accordion */}
-            <ProductDetailClient accordions={accordions} product={{ id: product.id, name: product.name, price: product.price, image_url: product.image_url }} />
+            <ProductDetailClient accordions={accordions} product={{ id: product.id, name: product.name, price: product.price, image_url: product.image_url, stock_quantity: product.stock_quantity ?? null, is_preorder: product.is_preorder ?? false }} />
           </div>
         </section>
 

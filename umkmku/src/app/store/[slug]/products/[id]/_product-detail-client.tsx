@@ -12,11 +12,12 @@ interface AccordionItem {
 
 interface Props {
   accordions: AccordionItem[]
-  product: { id: string; name: string; price: number | null; image_url: string | null }
+  product: { id: string; name: string; price: number | null; image_url: string | null; stock_quantity?: number | null; is_preorder?: boolean }
 }
 
 export function ProductDetailClient({ accordions, product }: Props) {
   const { addItem } = useCart()
+  const outOfStock = product.stock_quantity !== null && product.stock_quantity !== undefined && product.stock_quantity <= 0 && !product.is_preorder
   const [open, setOpen] = useState<string | null>(null)
   const [addState, setAddState] = useState<'idle' | 'flying' | 'done'>('idle')
   const [flyOrigin, setFlyOrigin] = useState({ x: 0, y: 0 })
@@ -75,14 +76,30 @@ export function ProductDetailClient({ accordions, product }: Props) {
         </div>
       )}
 
+      {/* Stock info */}
+      {product.is_preorder && (
+        <p className="text-[11px] font-semibold text-[#e91e63] uppercase tracking-widest mb-3">Pre-Order</p>
+      )}
+      {!product.is_preorder && product.stock_quantity !== null && product.stock_quantity !== undefined && (
+        <p className={`text-[11px] mb-3 ${product.stock_quantity <= 0 ? 'text-red-500 font-medium' : product.stock_quantity <= 5 ? 'text-amber-600' : 'text-[var(--color-accent)]/50'}`}>
+          {product.stock_quantity <= 0 ? 'Stok habis' : `Stok tersedia: ${product.stock_quantity}`}
+        </p>
+      )}
+
       {/* CTA */}
       <button
         ref={btnRef}
         onClick={handleAddToCart}
-        disabled={addState !== 'idle'}
-        className="w-full py-4 bg-[var(--color-primary)] text-white text-label-caps tracking-widest flex items-center justify-center gap-3 hover:opacity-90 transition-opacity mb-10 disabled:cursor-default"
+        disabled={addState !== 'idle' || outOfStock}
+        className={`w-full py-4 text-label-caps tracking-widest flex items-center justify-center gap-3 transition-opacity mb-10 ${
+          outOfStock
+            ? 'bg-[var(--color-secondary)] text-[var(--color-accent)]/40 cursor-not-allowed border border-black/10'
+            : 'bg-[var(--color-primary)] text-white hover:opacity-90 disabled:cursor-default'
+        }`}
       >
-        {addState === 'done' ? (
+        {outOfStock ? (
+          <>STOK HABIS</>
+        ) : addState === 'done' ? (
           <>
             <Check size={14} />
             ADDED TO CART

@@ -8,7 +8,12 @@ export async function middleware(request: NextRequest) {
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000'
   const slug = extractSlug(hostname, rootDomain)
 
-  if (!slug) return NextResponse.next()
+  if (!slug) {
+    // Main domain — tambah header x-pathname agar layout bisa tahu current path
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-pathname', request.nextUrl.pathname)
+    return NextResponse.next({ request: { headers: requestHeaders } })
+  }
 
   const url = request.nextUrl.clone()
 

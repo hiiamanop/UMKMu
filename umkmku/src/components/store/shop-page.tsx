@@ -236,6 +236,8 @@ function ShopProductCard({ product, slug, initialWished }: { product: Product; s
   const { addItem } = useCart()
   const [wished, setWished] = useState(initialWished)
   const [addState, setAddState] = useState<'idle' | 'flying' | 'done'>('idle')
+
+  const outOfStock = product.stock_quantity !== null && product.stock_quantity <= 0 && !product.is_preorder
   const [flyOrigin, setFlyOrigin] = useState({ x: 0, y: 0 })
   const [flyDest, setFlyDest] = useState({ x: 0, y: 0 })
   const [flyPhase, setFlyPhase] = useState<'start' | 'end'>('start')
@@ -281,11 +283,27 @@ function ShopProductCard({ product, slug, initialWished }: { product: Product; s
         <div className="relative aspect-square bg-[#f3f3f3] overflow-hidden">
           <Link href={`/store/${slug}/products/${product.id}`}>
             {product.image_url ? (
-              <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+              <Image src={product.image_url} alt={product.name} fill className={`object-cover ${outOfStock ? 'opacity-50' : ''}`} />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-[#e4bdc2] text-4xl">🧴</div>
             )}
           </Link>
+          {/* Stock badges */}
+          {outOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-black/70 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1.5">Stok Habis</span>
+            </div>
+          )}
+          {product.is_preorder && (
+            <div className="absolute top-2 left-2">
+              <span className="bg-[#e91e63] text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1">Pre-Order</span>
+            </div>
+          )}
+          {!outOfStock && !product.is_preorder && product.stock_quantity !== null && product.stock_quantity <= 5 && (
+            <div className="absolute top-2 left-2">
+              <span className="bg-amber-500 text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1">Stok {product.stock_quantity}</span>
+            </div>
+          )}
           <button onClick={async e => {
             e.preventDefault()
             const supabase = createClient()
@@ -302,14 +320,16 @@ function ShopProductCard({ product, slug, initialWished }: { product: Product; s
           }} className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
             <Heart size={14} className={wished ? 'fill-[#e91e63] text-[#e91e63]' : 'text-[#5b3f43]'} />
           </button>
-          <button
-            onClick={handleQuickAdd}
-            className={`absolute bottom-0 inset-x-0 py-2 text-white text-[11px] font-bold uppercase tracking-wide text-center translate-y-full group-hover:translate-y-0 transition-transform flex items-center justify-center gap-2 ${
-              addState === 'done' ? 'bg-green-600' : 'bg-[#1a1c1c]'
-            }`}>
-            <ShoppingBag size={12} />
-            {addState === 'done' ? 'Added!' : 'Quick Add'}
-          </button>
+          {!outOfStock && (
+            <button
+              onClick={handleQuickAdd}
+              className={`absolute bottom-0 inset-x-0 py-2 text-white text-[11px] font-bold uppercase tracking-wide text-center translate-y-full group-hover:translate-y-0 transition-transform flex items-center justify-center gap-2 ${
+                addState === 'done' ? 'bg-green-600' : 'bg-[#1a1c1c]'
+              }`}>
+              <ShoppingBag size={12} />
+              {addState === 'done' ? 'Added!' : 'Quick Add'}
+            </button>
+          )}
         </div>
         <div className="p-3">
           <p className="text-[14px] font-bold text-[#1a1c1c] line-clamp-2 mb-1">{product.name}</p>
@@ -327,6 +347,11 @@ function ShopProductCard({ product, slug, initialWished }: { product: Product; s
               Lihat Detail →
             </Link>
           </div>
+          {product.stock_quantity !== null && !product.is_preorder && (
+            <p className={`text-[10px] mt-1 ${outOfStock ? 'text-red-500 font-medium' : 'text-[#8f6f73]'}`}>
+              {outOfStock ? 'Stok habis' : `Stok: ${product.stock_quantity}`}
+            </p>
+          )}
         </div>
       </div>
     </>

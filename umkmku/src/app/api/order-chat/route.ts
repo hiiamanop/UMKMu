@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { geminiChat, geminiVision } from '@/lib/ai/gemini'
 
 // GET /api/order-chat?orderId=xxx — load messages
 export async function GET(req: NextRequest) {
@@ -157,6 +158,11 @@ Instruksi:
       const data = await res.json()
       return data.message?.content ?? fallbackReply(order.status)
     }
+  } catch { /* Ollama tidak tersedia */ }
+
+  // Fallback: Gemini 2.0 Flash
+  try {
+    return await geminiChat([{ role: 'user', content: prompt }])
   } catch {}
   return fallbackReply(order.status)
 }
@@ -183,20 +189,17 @@ async function validatePayment(order: any, imageUrl: string, brandName: string |
   const customerName = order.customer_name ?? 'tidak diketahui'
   const merchantName = brandName ?? 'nama toko'
 
+  // Fetch image once — dipakai oleh Ollama maupun Gemini fallback
+  let imageBase64: string | null = null
   try {
-    const ollamaBase = process.env.OLLAMA_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
-    const model = process.env.OLLAMA_MODEL ?? 'gemma4:12b'
+    const imgRes = await fetch(imageUrl)
+    if (imgRes.ok) {
+      const buf = await imgRes.arrayBuffer()
+      imageBase64 = Buffer.from(buf).toString('base64')
+    }
+  } catch { /* proceed without image */ }
 
-    let imageBase64: string | null = null
-    try {
-      const imgRes = await fetch(imageUrl)
-      if (imgRes.ok) {
-        const buf = await imgRes.arrayBuffer()
-        imageBase64 = Buffer.from(buf).toString('base64')
-      }
-    } catch { /* proceed without image */ }
-
-    const prompt = `Kamu adalah auditor keuangan KETAT. Periksa gambar bukti pembayaran ini piksel demi piksel.
+  const validationPrompt = `Kamu adalah auditor keuangan KETAT. Periksa gambar bukti pembayaran ini piksel demi piksel.
 
 DATA PESANAN YANG HARUS DICOCOKKAN:
 - Nominal pesanan: ${amount} rupiah (format di gambar bisa: ${amountFormats})
@@ -232,7 +235,11 @@ Balas HANYA JSON ini, tanpa teks lain sebelum atau sesudah:
   "message": "<pesan untuk customer, 1-2 kalimat, Bahasa Indonesia>"
 }`
 
-    const messagePayload: any = { role: 'user', content: prompt }
+  // Coba Ollama
+  try {
+    const ollamaBase = process.env.OLLAMA_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
+    const model = process.env.OLLAMA_MODEL ?? 'gemma4:12b'
+    const messagePayload: any = { role: 'user', content: validationPrompt }
     if (imageBase64) messagePayload.images = [imageBase64]
 
     const res = await fetch(`${ollamaBase}/api/chat`, {
@@ -248,33 +255,46 @@ Balas HANYA JSON ini, tanpa teks lain sebelum atau sesudah:
       if (match) {
         const parsed = JSON.parse(match[0])
         const c = parsed.checks ?? {}
-
-        // Compute confidence from checks only — never trust AI's own confidence/valid numbers
-        // Weights: amount(45) + merchant_name(25) + is_payment(15) + status(10) + sender_name(5)
         const isPayment    = c.is_payment_screenshot === true
         const amountOk     = c.amount_matches === true
         const merchantOk   = c.merchant_name_matches === true
         const senderOk     = c.sender_name_matches === true
         const statusOk     = c.status_success === true
-
         const confidence = (amountOk ? 45 : 0) + (merchantOk ? 25 : 0) + (isPayment ? 15 : 0) + (statusOk ? 10 : 0) + (senderOk ? 5 : 0)
-        // amount + merchant + is_payment + status semua wajib pass
         const valid = isPayment && amountOk && merchantOk && statusOk && confidence >= 80
-
-        // Build note with what AI actually read from image
         const amountRead = parsed.amount_read ? `Terbaca: ${parsed.amount_read}` : null
         const note = parsed.note ?? (amountRead ?? buildNote(c))
         return { valid, confidence, note, message: parsed.message ?? fallbackMessage(amount) }
       }
-      // JSON parse failed
       return { valid: false, confidence: 0, note: 'Respons AI tidak dapat diparsing', message: 'Maaf, gagal memvalidasi bukti. Silakan kirim ulang foto yang lebih jelas.' }
     }
-  } catch {}
+  } catch { /* Ollama tidak tersedia */ }
+
+  // Fallback: Gemini 2.5 Flash + thinking (vision)
+  if (imageBase64) {
+    try {
+      const raw = await geminiVision(validationPrompt, imageBase64)
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (match) {
+        const parsed = JSON.parse(match[0])
+        const c = parsed.checks ?? {}
+        const isPayment = c.is_payment_screenshot === true
+        const amountOk = c.amount_matches === true
+        const merchantOk = c.merchant_name_matches === true
+        const senderOk = c.sender_name_matches === true
+        const statusOk = c.status_success === true
+        const confidence = (amountOk ? 45 : 0) + (merchantOk ? 25 : 0) + (isPayment ? 15 : 0) + (statusOk ? 10 : 0) + (senderOk ? 5 : 0)
+        const valid = isPayment && amountOk && merchantOk && statusOk && confidence >= 80
+        const note = parsed.note ?? buildNote(c)
+        return { valid, confidence, note, message: parsed.message ?? fallbackMessage(amount) }
+      }
+    } catch { /* Gemini juga gagal */ }
+  }
 
   return {
     valid: false,
     confidence: 0,
-    note: 'Ollama tidak tersedia, validasi manual diperlukan',
+    note: 'AI tidak tersedia, validasi manual diperlukan',
     message: `Bukti pembayaranmu sudah kami terima. Tim kami akan memverifikasi secara manual. 🙏`,
   }
 }

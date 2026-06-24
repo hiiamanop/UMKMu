@@ -10,6 +10,7 @@ interface Message {
   id: string
   created_at: string
   role: 'user' | 'assistant'
+  sender_type: 'customer' | 'ai' | 'merchant'
   content: string | null
   attachment_url: string | null
 }
@@ -65,6 +66,8 @@ export function ChatsClient({ slug, threads }: Props) {
   })
   const [messages, setMessages] = useState<Message[]>([])
   const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     const fromUrl = searchParams.get('order')
@@ -76,11 +79,28 @@ export function ChatsClient({ slug, threads }: Props) {
     if (!selected) return
     setLoadingMsgs(true)
     setMessages([])
-    fetch(`/api/order-chat?orderId=${selected}`)
+    fetch(`/api/merchant-chat?orderId=${selected}&slug=${slug}`)
       .then(r => r.json())
       .then(data => setMessages(data.messages ?? []))
       .finally(() => setLoadingMsgs(false))
-  }, [selected])
+  }, [selected, slug])
+
+  async function sendReply() {
+    if (!replyText.trim() || !selected || sending) return
+    setSending(true)
+    const content = replyText.trim()
+    setReplyText('')
+    const res = await fetch('/api/merchant-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, orderId: selected, content }),
+    })
+    if (res.ok) {
+      const { message } = await res.json()
+      setMessages(prev => [...prev, message])
+    }
+    setSending(false)
+  }
 
   const activeThread = threads.find(t => t.order.id === selected)
 
@@ -145,35 +165,67 @@ export function ChatsClient({ slug, threads }: Props) {
                 <div className="flex items-center justify-center h-full">
                   <p className="text-[12px] text-[var(--color-accent)]/30 font-sans">Memuat pesan...</p>
                 </div>
-              ) : messages.map(msg => (
-                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
-                      : 'bg-[var(--color-secondary)] text-[var(--color-accent)] rounded-tl-sm'
-                  }`}>
-                    {msg.attachment_url && (
-                      <button className="mb-2 block cursor-zoom-in hover:opacity-90 transition-opacity"
-                        onClick={() => setZoomSrc(msg.attachment_url!)}>
-                        <Image src={msg.attachment_url} alt="attachment" width={200} height={160}
-                          className="rounded-lg object-cover max-h-[160px] w-auto" />
-                      </button>
-                    )}
-                    {msg.content && (
-                      <p className="text-[13px] leading-relaxed whitespace-pre-line">{msg.content}</p>
-                    )}
-                    <p className={`text-[10px] mt-1 ${msg.role === 'user' ? 'text-white/40' : 'text-[var(--color-accent)]/30'}`}>
-                      {timeAgo(msg.created_at)}
-                    </p>
+              ) : messages.map(msg => {
+                const isCustomer = msg.role === 'user'
+                const isMerchant = msg.sender_type === 'merchant'
+                const isAI = msg.sender_type === 'ai' || (!isCustomer && !isMerchant)
+
+                return (
+                  <div key={msg.id} className={`flex ${isCustomer ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+                      isCustomer
+                        ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
+                        : isMerchant
+                          ? 'bg-black text-white rounded-tl-sm'
+                          : 'bg-[var(--color-secondary)] text-[var(--color-accent)] rounded-tl-sm'
+                    }`}>
+                      {/* Label pengirim untuk pesan masuk */}
+                      {!isCustomer && (
+                        <p className={`text-[9px] tracking-widest uppercase font-sans mb-1.5 ${
+                          isMerchant ? 'text-white/50' : 'text-[var(--color-accent)]/40'
+                        }`}>
+                          {isMerchant ? 'Kamu (Merchant)' : 'AI Assistant'}
+                        </p>
+                      )}
+                      {msg.attachment_url && (
+                        <button className="mb-2 block cursor-zoom-in hover:opacity-90 transition-opacity"
+                          onClick={() => setZoomSrc(msg.attachment_url!)}>
+                          <Image src={msg.attachment_url} alt="attachment" width={200} height={160}
+                            className="rounded-lg object-cover max-h-[160px] w-auto" />
+                        </button>
+                      )}
+                      {msg.content && (
+                        <p className="text-[13px] leading-relaxed whitespace-pre-line">{msg.content}</p>
+                      )}
+                      <p className={`text-[10px] mt-1 ${isCustomer || isMerchant ? 'text-white/40' : 'text-[var(--color-accent)]/30'}`}>
+                        {timeAgo(msg.created_at)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
-            <div className="px-6 py-3 border-t border-black/8 bg-[var(--color-secondary)] shrink-0">
-              <p className="text-[11px] text-[var(--color-accent)]/40 font-sans text-center">
-                Halaman ini hanya untuk melihat percakapan. Balasan otomatis dikirim oleh AI.
-              </p>
+            {/* Merchant reply input */}
+            <div className="px-6 py-4 border-t border-black/8 bg-white shrink-0">
+              <div className="flex gap-3 items-end">
+                <textarea
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply() } }}
+                  placeholder="Balas sebagai merchant... (Enter untuk kirim)"
+                  rows={2}
+                  disabled={sending}
+                  className="flex-1 bg-[var(--color-secondary)] border border-black/15 rounded-xl px-4 py-2.5 text-[13px] resize-none focus:outline-none focus:border-[var(--color-primary)] transition-colors disabled:opacity-50"
+                />
+                <button
+                  onClick={sendReply}
+                  disabled={!replyText.trim() || sending}
+                  className="px-4 py-2.5 bg-black text-white text-label-caps text-[10px] tracking-widest rounded-xl hover:opacity-80 transition-opacity disabled:opacity-40"
+                >
+                  Kirim
+                </button>
+              </div>
             </div>
           </div>
         ) : (

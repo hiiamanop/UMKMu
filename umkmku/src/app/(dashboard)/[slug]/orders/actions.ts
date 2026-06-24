@@ -5,7 +5,31 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 export async function updateOrderStatus(slug: string, orderId: string, status: string) {
   const supabase = createServiceClient()
-  await supabase.from('orders').update({ status }).eq('id', orderId)
+
+  // Fetch current order status + items before updating (needed for stock logic)
+  const { data: currentOrder } = await supabase
+    .from('orders')
+    .select('status, order_items(product_id, quantity)')
+    .eq('id', orderId)
+    .single()
+
+  await supabase.from('orders').update({ status, previous_status: currentOrder?.status ?? null }).eq('id', orderId)
+
+  // Deduct stock when payment verified
+  if (status === 'payment_verified') {
+    for (const item of (currentOrder?.order_items ?? []) as any[]) {
+      if (!item.product_id) continue
+      await supabase.rpc('decrement_stock', { p_product_id: item.product_id, p_qty: item.quantity })
+    }
+  }
+
+  // Return stock when cancelled from payment_verified
+  if (status === 'cancelled' && currentOrder?.status === 'payment_verified') {
+    for (const item of (currentOrder?.order_items ?? []) as any[]) {
+      if (!item.product_id) continue
+      await supabase.rpc('increment_stock', { p_product_id: item.product_id, p_qty: item.quantity })
+    }
+  }
 
   let content: string | null = null
 
