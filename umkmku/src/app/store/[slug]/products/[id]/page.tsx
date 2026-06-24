@@ -37,7 +37,7 @@ export default async function ProductDetailPage({ params }: Props) {
     {
       key: 'how_to_use',
       label: 'CARA PENGGUNAAN',
-      content: product.description ?? 'Gunakan secukupnya pada kulit yang sudah bersih. Aplikasikan dengan gerakan memutar lembut hingga meresap sempurna.',
+      content: product.how_to_use ?? product.description ?? 'Gunakan secukupnya pada kulit yang sudah bersih. Aplikasikan dengan gerakan memutar lembut hingga meresap sempurna.',
     },
     {
       key: 'ingredients',
@@ -108,12 +108,7 @@ export default async function ProductDetailPage({ params }: Props) {
             )}
 
             {/* Interactive: buy button + accordion */}
-            <ProductDetailClient
-              accordions={accordions}
-              marketplaceUrl={marketplaceUrl}
-              whatsappNumber={tenant.whatsapp_number}
-              productName={product.name}
-            />
+            <ProductDetailClient accordions={accordions} product={{ id: product.id, name: product.name, price: product.price, image_url: product.image_url }} />
           </div>
         </section>
 

@@ -41,6 +41,8 @@ export interface Tenant {
   page_sustainability_story_image_url: string | null
   page_sustainability_story_title: string | null
   page_sustainability_story_body: string | null
+  qris_image_url: string | null
+  auth_hero_image_url: string | null
 }
 
 export interface IngredientItem { name: string; description: string }
@@ -119,6 +121,7 @@ export interface Product {
   concerns: string[]
   ingredients: string[]
   usage_step: string | null
+  how_to_use: string | null
   // Category-specific JSON fields
   skincare_data: SkincareData | null
   parfum_data: ParfumData | null
@@ -153,6 +156,34 @@ export interface ChatSession {
   ended_at: string | null
 }
 
+export interface UserProfile {
+  id: string
+  created_at: string
+  full_name: string | null
+  address: string | null
+  whatsapp_number: string | null
+  skin_type: string | null
+  skin_concerns: string[] | null
+  avatar_url: string | null
+}
+
+export interface Wishlist {
+  id: string
+  created_at: string
+  user_id: string
+  tenant_id: string
+  product_id: string
+}
+
+export interface OrderChat {
+  id: string
+  created_at: string
+  order_id: string
+  role: 'user' | 'assistant'
+  content: string | null
+  attachment_url: string | null
+}
+
 export interface Customer {
   id: string
   tenant_id: string
@@ -175,25 +206,18 @@ export interface OrderItem {
 export interface Order {
   id: string
   tenant_id: string
-  customer_id: string | null
+  user_id: string | null
   created_at: string
-  customer_email: string
-  customer_phone: string | null
+  status: string
+  total_amount: number
   customer_name: string | null
-  items: OrderItem[]
-  // Pricing breakdown (Rupiah)
-  subtotal: number
-  ppn: number // 12% VAT
-  subtotal_with_ppn: number
-  xendit_fee: number // 2.5% of subtotal_with_ppn
-  final_price: number // what customer pays
-  // Payment
-  qris_code: string | null
-  qris_image_url: string | null
-  payment_status: OrderPaymentStatus
-  order_status: OrderStatus
-  promo_code: string | null
-  discount_amount: number
+  customer_whatsapp: string | null
+  shipping_address: string | null
+  courier_name: string | null
+  tracking_number: string | null
+  shipping_photo_url: string | null
   notes: string | null
-  updated_at: string
+  payment_confidence: number | null
+  payment_ai_note: string | null
+  order_items?: OrderItem[]
 }

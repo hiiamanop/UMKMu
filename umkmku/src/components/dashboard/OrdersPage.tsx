@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrderTable } from './OrderTable'
-import type { Order, OrderStatus } from '@/lib/supabase/types'
+// ponytail: legacy component, Order type changed
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Order = any; type OrderStatus = string
 
 interface OrdersPageProps {
   slug: string

@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils'
 const topTabs = [
   { label: 'Brand & Kontak', path: '' },
   { label: 'Produk', path: '/products' },
+  { label: 'Pesanan', path: '/orders' },
+  { label: 'Chat', path: '/chats' },
   { label: 'Tampilan', path: '/appearance' },
   { label: 'Chatbot', path: '/chatbot' },
 ]
@@ -17,6 +19,7 @@ const pageSubTabs = [
   { label: 'Ingredients', path: '/pages/ingredients' },
   { label: 'Sustainability', path: '/pages/sustainability' },
   { label: 'About', path: '/pages/about' },
+  { label: 'Login & Register', path: '/pages/auth' },
 ]
 
 const linkCls = 'px-4 py-2.5 text-xs tracking-widest uppercase font-sans transition-all rounded-sm'

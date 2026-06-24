@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import type { Tenant } from '@/lib/supabase/types'
 import { updateBrand } from '../actions'
 import { FormSection, FieldLabel, StatusMessage } from './form-section'
+import { ImageUploader } from './image-uploader'
 
 export function BrandForm({ tenant }: { tenant: Tenant }) {
   const [state, action, pending] = useActionState(
@@ -64,6 +65,18 @@ export function BrandForm({ tenant }: { tenant: Tenant }) {
               placeholder="https://shopee.co.id/brandkamu"
               className="bg-white border-black/15 focus-visible:ring-[var(--color-primary)]/20 focus-visible:border-[var(--color-primary)]" />
           </div>
+        </div>
+      </FormSection>
+
+      <FormSection title="Pembayaran">
+        <div className="max-w-xs">
+          <ImageUploader
+            name="qris_image"
+            label="QRIS Statis"
+            hint="Upload gambar QRIS statis brandmu. Akan ditampilkan otomatis di chat pembayaran setelah customer membuat pesanan."
+            currentUrl={tenant.qris_image_url}
+            aspectClass="aspect-square"
+          />
         </div>
       </FormSection>
 

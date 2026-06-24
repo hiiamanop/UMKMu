@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getTenantBySlug } from '@/lib/tenant'
 import { StoreNavbar } from '@/components/store/store-navbar'
+import { CartProvider } from '@/lib/cart-context'
 
 interface Props {
   children: React.ReactNode
@@ -23,8 +24,10 @@ export default async function StoreLayout({ children, params }: Props) {
         '--color-accent': tenant.accent_color,
       } as React.CSSProperties}
     >
-      <StoreNavbar tenant={tenant} />
-      {children}
+      <CartProvider slug={slug}>
+        <StoreNavbar tenant={tenant} />
+        {children}
+      </CartProvider>
     </div>
   )
 }

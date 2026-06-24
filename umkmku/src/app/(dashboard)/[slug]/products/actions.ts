@@ -16,6 +16,7 @@ export async function upsertProduct(slug: string, productId: string | null, form
   const ingredients = formData.get('ingredients')?.toString()
     .split(',').map(s => s.trim()).filter(Boolean) ?? []
   const usage_step = formData.get('usage_step')?.toString() || null
+  const how_to_use = formData.get('how_to_use')?.toString().trim() || null
   const tokopedia_url = formData.get('tokopedia_url')?.toString().trim() || null
   const shopee_url = formData.get('shopee_url')?.toString().trim() || null
 
@@ -70,6 +71,7 @@ export async function upsertProduct(slug: string, productId: string | null, form
     concerns,
     ingredients,
     usage_step,
+    how_to_use,
     tokopedia_url,
     shopee_url,
     ...(image_url ? { image_url } : {}),
@@ -91,8 +93,8 @@ export async function upsertProduct(slug: string, productId: string | null, form
     if (error) return { error: 'Gagal menambah produk' }
   }
 
-  revalidatePath(`/store/${slug}`)
-  revalidatePath(`/${slug}/products`)
+  revalidatePath(`/store/${slug}`, 'page')
+  revalidatePath(`/${slug}/products`, 'page')
   return { success: true }
 }
 
@@ -115,7 +117,7 @@ export async function deleteProduct(slug: string, productId: string) {
 
   if (error) return { error: 'Gagal menghapus produk' }
 
-  revalidatePath(`/store/${slug}`)
-  revalidatePath(`/${slug}/products`)
+  revalidatePath(`/store/${slug}`, 'page')
+  revalidatePath(`/${slug}/products`, 'page')
   return { success: true }
 }

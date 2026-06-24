@@ -62,6 +62,13 @@ export function ProductForm({ slug, product, onSuccess }: Props) {
             className={`min-h-[80px] ${inputCls}`} />
         </div>
 
+        <div className="col-span-2">
+          <FieldLabel hint="Tampil di halaman detail produk bagian 'Cara Penggunaan'">Cara Penggunaan</FieldLabel>
+          <Textarea name="how_to_use" defaultValue={product?.how_to_use ?? ''}
+            className={`min-h-[100px] ${inputCls}`}
+            placeholder="Contoh: Oleskan secukupnya pada wajah yang sudah bersih. Gunakan pagi dan malam hari." />
+        </div>
+
         <div>
           <FieldLabel>Harga (IDR)</FieldLabel>
           <Input name="price" type="number" defaultValue={product?.price ?? ''}
