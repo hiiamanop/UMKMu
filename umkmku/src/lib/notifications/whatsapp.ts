@@ -109,3 +109,16 @@ Pesanan *#${shortId}* di *${brandName}* telah dibatalkan.
 
 Jika ada pertanyaan, silakan hubungi kami. Terima kasih 🙏`)
 }
+
+export async function notifyMerchantQuotaWarning({ merchantWa, brandName, remaining, limit }: {
+  merchantWa: string; brandName: string; remaining: number; limit: number
+}) {
+  await send(merchantWa, `⚠️ *Kuota Pesanan Hampir Habis* — ${brandName}
+
+Sisa kuota: *${remaining} dari ${limit} pesanan/bulan*
+
+Segera top-up agar toko tetap berjalan lancar:
+👉 Rp 10.000 untuk 50 pesanan tambahan
+
+Buka dashboard untuk top-up sekarang.`)
+}

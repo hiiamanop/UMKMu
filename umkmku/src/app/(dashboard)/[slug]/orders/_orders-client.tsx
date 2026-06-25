@@ -126,6 +126,7 @@ export function OrdersClient({ slug, orders }: Props) {
   }, [searchParams])
   const [shippingForm, setShippingForm] = useState<string | null>(null)
   const [localOrders, setLocalOrders] = useState(orders)
+  useEffect(() => { setLocalOrders(orders) }, [orders])
   const [isPending, startTransition] = useTransition()
 
   function toggleExpand(id: string) {

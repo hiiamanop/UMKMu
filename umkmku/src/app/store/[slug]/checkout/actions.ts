@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { notifyMerchantNewOrder, notifyCustomerOrderCreated } from '@/lib/notifications/whatsapp'
+import { notifyMerchantNewOrder, notifyCustomerOrderCreated, notifyMerchantQuotaWarning } from '@/lib/notifications/whatsapp'
 
 interface CartItem {
   productId: string
@@ -31,6 +31,55 @@ export async function createOrder(
     .eq('slug', slug)
     .single()
   if (!tenant) return { error: 'Toko tidak ditemukan' }
+
+  // Cek dan update kuota transaksi subscription
+  const { data: sub } = await service
+    .from('tenant_subscriptions')
+    .select('id, plan_id, transactions_used, overage_transactions, notified_80pct')
+    .eq('tenant_id', tenant.id)
+    .in('status', ['trial', 'active'])
+    .maybeSingle()
+
+  if (sub) {
+    const { data: plan } = await service
+      .from('subscription_plans')
+      .select('transaction_limit')
+      .eq('id', sub.plan_id)
+      .single()
+
+    const limit = plan?.transaction_limit ?? null
+
+    if (limit !== null) {
+      const newCount = sub.transactions_used + 1
+
+      if (newCount > limit) {
+        // Pesanan masuk sebagai overage — tidak diblokir
+        await service
+          .from('tenant_subscriptions')
+          .update({ overage_transactions: sub.overage_transactions + 1 })
+          .eq('id', sub.id)
+      } else {
+        await service
+          .from('tenant_subscriptions')
+          .update({
+            transactions_used: newCount,
+            // Tandai notif 80% jika belum dikirim
+            notified_80pct: sub.notified_80pct || newCount >= Math.floor(limit * 0.8),
+          })
+          .eq('id', sub.id)
+
+        // Kirim notif WA ke merchant jika baru mencapai 80%
+        if (!sub.notified_80pct && newCount >= Math.floor(limit * 0.8) && tenant.whatsapp_number) {
+          notifyMerchantQuotaWarning({
+            merchantWa: tenant.whatsapp_number,
+            brandName: tenant.brand_name,
+            remaining: limit - newCount,
+            limit,
+          })
+        }
+      }
+    }
+  }
 
   // Check virtual available stock for each item
   const productIds = items.map(i => i.productId)

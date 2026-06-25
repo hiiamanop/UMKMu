@@ -1,4 +1,6 @@
 export type TenantCategory = 'skincare' | 'parfum' | 'fashion' | 'fdb'
+export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'suspended'
+export type SubscriptionPlanId = 'free' | 'business' | 'enterprise'
 export type OrderPaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'expired'
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
 
@@ -44,6 +46,7 @@ export interface Tenant {
   page_sustainability_story_body: string | null
   qris_image_url: string | null
   auth_hero_image_url: string | null
+  subscription_id: string | null
 }
 
 export interface IngredientItem { name: string; description: string }
@@ -206,6 +209,52 @@ export interface OrderItem {
   product_id: string
   quantity: number
   price_at_purchase: number // Rupiah
+}
+
+export interface SubscriptionPlan {
+  id: SubscriptionPlanId
+  name: string
+  price_monthly: number
+  ai_token_limit: number           // -1 = pakai hard cap
+  ai_token_hard_cap: number | null
+  transaction_limit: number | null // null = unlimited
+  is_active: boolean
+}
+
+export interface TenantSubscription {
+  id: string
+  tenant_id: string
+  plan_id: SubscriptionPlanId
+  status: SubscriptionStatus
+  trial_ends_at: string | null
+  current_period_start: string | null
+  current_period_end: string | null
+  ai_tokens_used: number
+  transactions_used: number
+  overage_transactions: number
+  notified_80pct: boolean
+  suspended_notified: boolean
+  created_at: string
+  updated_at: string
+  // join
+  plan?: SubscriptionPlan
+}
+
+export interface TopUpPackage {
+  id: string
+  name: string
+  price: number
+  transaction_quota: number
+  is_active: boolean
+}
+
+export interface TopUpOrder {
+  id: string
+  tenant_id: string
+  package_id: string
+  status: 'pending' | 'paid' | 'cancelled'
+  paid_at: string | null
+  created_at: string
 }
 
 export interface Order {

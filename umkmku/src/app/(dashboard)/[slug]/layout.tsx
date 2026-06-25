@@ -2,7 +2,49 @@ import { notFound, redirect } from 'next/navigation'
 import { getTenantBySlug } from '@/lib/tenant'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { DashboardNav } from './_components/dashboard-nav'
-import { LogOut, ExternalLink } from 'lucide-react'
+import { LogOut, ExternalLink, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
+
+function SuspendedOverlay({ slug, planId }: { slug: string; planId?: string }) {
+  const isExpiredTrial = !planId || planId === 'free'
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="max-w-md w-full rounded-2xl bg-white border border-red-100 p-10 flex flex-col items-center gap-6 text-center shadow-sm">
+        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+          <AlertTriangle size={24} className="text-red-500" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">
+            {isExpiredTrial ? 'Trial kamu sudah berakhir' : 'Toko disuspend'}
+          </h2>
+          <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+            {isExpiredTrial
+              ? 'Masa trial 7 hari telah habis. Upgrade ke plan Business atau Enterprise untuk mengaktifkan kembali toko kamu.'
+              : 'Toko kamu sedang disuspend karena periode berlangganan telah berakhir. Hubungi tim UMKMku untuk mengaktifkan kembali.'}
+          </p>
+        </div>
+        <div className="flex flex-col gap-3 w-full">
+          <Link
+            href="/pricing"
+            className="w-full py-3 rounded-xl text-sm font-semibold text-white text-center transition-opacity hover:opacity-90"
+            style={{ background: '#0A2F73' }}
+          >
+            Lihat Pilihan Plan
+          </Link>
+          <a
+            href={`https://wa.me/6281234567890?text=Halo,%20saya%20ingin%20upgrade%20plan%20toko%20${slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3 rounded-xl text-sm font-semibold text-center border"
+            style={{ color: '#0A2F73', borderColor: '#E5EAF0' }}
+          >
+            Hubungi via WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface Props {
   children: React.ReactNode
@@ -37,14 +79,24 @@ export default async function MerchantDashboardLayout({ children, params }: Prop
   }
 
   const service = createServiceClient()
-  const { count: pendingCount } = await service
-    .from('orders')
-    .select('id', { count: 'exact', head: true })
-    .eq('tenant_id', tenant.id)
-    .in('status', ['pending_payment', 'payment_submitted'])
+
+  const [{ count: pendingCount }, { data: subscription }] = await Promise.all([
+    service
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenant.id)
+      .in('status', ['pending_payment', 'payment_submitted']),
+    service
+      .from('tenant_subscriptions')
+      .select('status, trial_ends_at, current_period_end, plan_id')
+      .eq('tenant_id', tenant.id)
+      .maybeSingle(),
+  ])
 
   // Login page: render tanpa sidebar
   if (isLoginPage) return <>{children}</>
+
+  const isSuspended = subscription?.status === 'suspended' || subscription?.status === 'expired'
 
   return (
     <div
@@ -116,7 +168,7 @@ export default async function MerchantDashboardLayout({ children, params }: Prop
 
         {/* Content */}
         <main className="flex-1 px-10 py-10 w-full">
-          {children}
+          {isSuspended ? <SuspendedOverlay slug={slug} planId={subscription?.plan_id} /> : children}
         </main>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
-import { getAIModel } from '@/lib/ai/provider'
+import { getAIModel, useGeminiDirect } from '@/lib/ai/provider'
 import { generateSlug, getOnboardingSystemPrompt } from '@/lib/ai/onboarding'
 import { geminiChat } from '@/lib/ai/gemini'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -37,15 +37,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Extract config dari AI — coba Ollama dulu, fallback ke Gemini 2.0 Flash
+    // Extract config dari AI
+    // Production (AI_PROVIDER=gemini): langsung Gemini 2.0 Flash
+    // Dev (AI_PROVIDER=ollama): coba Ollama dulu, fallback ke Gemini
     const onboardingPrompt = getOnboardingSystemPrompt(category)
     let text: string
-    try {
-      const result = await generateText({ model: getAIModel(), system: onboardingPrompt, prompt: description })
-      text = result.text
-    } catch {
-      // Ollama tidak tersedia, gunakan Gemini 2.0 Flash
+    if (useGeminiDirect()) {
       text = await geminiChat([{ role: 'user', content: description }], onboardingPrompt)
+    } else {
+      try {
+        const result = await generateText({ model: getAIModel(), system: onboardingPrompt, prompt: description })
+        text = result.text
+      } catch {
+        text = await geminiChat([{ role: 'user', content: description }], onboardingPrompt)
+      }
     }
 
     // Parse JSON dari response (handle ```json blocks)
@@ -141,6 +146,23 @@ export async function POST(request: NextRequest) {
       if (productsError) {
         console.error('Products insert error:', productsError)
       }
+    }
+
+    // Buat subscription trial otomatis untuk tenant baru
+    const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    const { data: newSub } = await supabase
+      .from('tenant_subscriptions')
+      .insert({
+        tenant_id: tenant.id,
+        plan_id: 'free',
+        status: 'trial',
+        trial_ends_at: trialEndsAt,
+      })
+      .select('id')
+      .single()
+
+    if (newSub) {
+      await supabase.from('tenants').update({ subscription_id: newSub.id }).eq('id', tenant.id)
     }
 
     const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000'

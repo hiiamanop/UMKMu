@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { MessageSquare } from 'lucide-react'
+import { StoreFooter } from '@/components/store/store-footer'
 
 interface Props {
   params: Promise<{ slug: string; orderId: string }>
@@ -55,17 +56,35 @@ export default async function TrackOrderPage({ params }: Props) {
 
   if (!order) notFound()
 
-  const { data: tenant } = await service
-    .from('tenants')
-    .select('brand_name, whatsapp_number, logo_url')
-    .eq('slug', slug)
-    .single()
+  const [{ data: tenant }, { data: chats }] = await Promise.all([
+    service.from('tenants').select('*').eq('slug', slug).single(),
+    service.from('order_chats').select('content, created_at, role, sender_type')
+      .eq('order_id', orderId).order('created_at', { ascending: true }),
+  ])
+
+  // Derive timeline events from chat messages
+  const events: { label: string; time: string; icon: string }[] = []
+  events.push({ label: 'Pesanan dibuat', time: order.created_at, icon: '🛍️' })
+  for (const msg of chats ?? []) {
+    const c = msg.content ?? ''
+    if (c.includes('Pembayaranmu telah diverifikasi'))
+      events.push({ label: 'Pembayaran diverifikasi', time: msg.created_at, icon: '✅' })
+    else if (c.includes('belum dapat diverifikasi'))
+      events.push({ label: 'Bukti pembayaran ditolak', time: msg.created_at, icon: '⚠️' })
+    else if (c.includes('sedang dalam perjalanan') || c.includes('Dikirim via'))
+      events.push({ label: 'Pesanan dikirim', time: msg.created_at, icon: '🚚' })
+    else if (c.includes('Pesanan Diterima') || c.includes('pesanan diterima') || c.includes('sudah diterima'))
+      events.push({ label: 'Pesanan diterima', time: msg.created_at, icon: '🏠' })
+    else if (c.includes('telah dibatalkan'))
+      events.push({ label: 'Pesanan dibatalkan', time: msg.created_at, icon: '❌' })
+  }
 
   const activeStep = getStepIndex(order.status)
   const isCancelled = order.status === 'cancelled'
   const progressPct = isCancelled ? 0 : [0, 33, 66, 100][activeStep]
 
   return (
+    <>
     <main className="min-h-screen pb-24" style={{ background: 'var(--color-secondary)' }}>
 
       {/* Breadcrumb + Title */}
@@ -283,6 +302,32 @@ export default async function TrackOrderPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Timeline */}
+      {events.length > 1 && (
+        <section className="px-6 md:px-16 max-w-[1280px] mx-auto mt-6">
+          <div className="bg-white border border-black/8 p-8">
+            <p className="text-label-caps text-[10px] text-[var(--color-accent)]/40 mb-6">RIWAYAT PESANAN</p>
+            <ol className="relative border-l border-black/10 space-y-6 ml-3">
+              {events.map((ev, i) => (
+                <li key={i} className="pl-6 relative">
+                  <span className="absolute -left-[11px] top-0.5 flex items-center justify-center w-5 h-5 rounded-full bg-white border border-black/15 text-[11px]">
+                    {ev.icon}
+                  </span>
+                  <p className="text-body-md text-[var(--color-accent)]">{ev.label}</p>
+                  <p className="text-[11px] text-[var(--color-accent)]/40 mt-0.5">
+                    {new Date(ev.time).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {' · '}
+                    {new Date(ev.time).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
     </main>
+    <StoreFooter tenant={tenant} />
+    </>
   )
 }

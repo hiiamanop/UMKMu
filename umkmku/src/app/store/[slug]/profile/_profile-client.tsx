@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { User, Heart, ShoppingBag, Settings, Leaf, Package, LogOut, Check } from 'lucide-react'
 import type { Tenant, Product, UserProfile } from '@/lib/supabase/types'
 import { saveProfile, saveSkinProfile, logout } from './actions'
@@ -49,13 +50,24 @@ interface Props {
   user: { id: string; email: string }
   profile: UserProfile | null
   orders: any[]
+  ordersPage: number
+  ordersTotal: number
+  ordersPageSize: number
   wishlistProducts: Product[]
+  wishlistPage: number
+  wishlistTotal: number
+  wishlistPageSize: number
   featuredProducts: Product[]
   slug: string
 }
 
-export function ProfileClient({ tenant, user, profile, orders, wishlistProducts, featuredProducts, slug }: Props) {
-  const [activeTab, setActiveTab] = useState('profile')
+export function ProfileClient({ tenant, user, profile, orders, ordersPage, ordersTotal, ordersPageSize, wishlistProducts, wishlistPage, wishlistTotal, wishlistPageSize, featuredProducts, slug }: Props) {
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = useState(() => {
+    if (searchParams.get('page')) return 'orders'
+    if (searchParams.get('wpage')) return 'wishlist'
+    return 'profile'
+  })
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState<string | null>(null)
 
@@ -274,7 +286,7 @@ export function ProfileClient({ tenant, user, profile, orders, wishlistProducts,
               <div className="bg-white border border-black/8 rounded p-8">
                 <p className={labelCls}>RIWAYAT</p>
                 <h2 className="text-headline-lg italic mb-8">Semua pesanan</h2>
-                {orders.length === 0 ? (
+                {orders.length === 0 && ordersPage === 1 ? (
                   <div className="text-center py-16">
                     <ShoppingBag size={32} className="mx-auto text-[var(--color-accent)]/20 mb-4" />
                     <p className="text-body-md text-[var(--color-accent)]/40 italic">Belum ada pesanan.</p>
@@ -284,7 +296,33 @@ export function ProfileClient({ tenant, user, profile, orders, wishlistProducts,
                     </Link>
                   </div>
                 ) : (
-                  <OrderTable orders={orders} slug={slug} showDetail />
+                  <>
+                    <OrderTable orders={orders} slug={slug} showDetail />
+                    {ordersTotal > ordersPageSize && (
+                      <div className="flex items-center justify-between pt-6 mt-6 border-t border-black/8">
+                        <p className="text-[11px] text-[var(--color-accent)]/40">
+                          {(ordersPage - 1) * ordersPageSize + 1}–{Math.min(ordersPage * ordersPageSize, ordersTotal)} dari {ordersTotal} pesanan
+                        </p>
+                        <div className="flex items-center gap-2">
+                          {ordersPage > 1
+                            ? <Link href={`/store/${slug}/profile?page=${ordersPage - 1}`}
+                                className="text-label-caps text-[10px] border border-black/15 px-3 py-1.5 hover:bg-[var(--color-secondary)] transition-colors">
+                                ← Sebelumnya
+                              </Link>
+                            : <span className="text-label-caps text-[10px] border border-black/10 px-3 py-1.5 opacity-30">← Sebelumnya</span>
+                          }
+                          <span className="text-[11px] text-[var(--color-accent)]/40">{ordersPage} / {Math.ceil(ordersTotal / ordersPageSize)}</span>
+                          {ordersPage < Math.ceil(ordersTotal / ordersPageSize)
+                            ? <Link href={`/store/${slug}/profile?page=${ordersPage + 1}`}
+                                className="text-label-caps text-[10px] border border-black/15 px-3 py-1.5 hover:bg-[var(--color-secondary)] transition-colors">
+                                Berikutnya →
+                              </Link>
+                            : <span className="text-label-caps text-[10px] border border-black/10 px-3 py-1.5 opacity-30">Berikutnya →</span>
+                          }
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -304,25 +342,51 @@ export function ProfileClient({ tenant, user, profile, orders, wishlistProducts,
                     </Link>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {wishlistProducts.map(p => (
-                      <Link key={p.id} href={`/store/${slug}/products/${p.id}`}
-                        className="group border border-black/8 rounded overflow-hidden hover:border-[var(--color-primary)]/30 transition-colors">
-                        <div className="relative aspect-square bg-[var(--color-secondary)]">
-                          {p.image_url && <Image src={p.image_url} alt={p.name} fill sizes="33vw" className="object-cover" />}
-                        </div>
-                        <div className="p-4 flex items-center justify-between">
-                          <div>
-                            <p className="text-body-md font-medium group-hover:text-[var(--color-primary)] transition-colors">{p.name}</p>
-                            <p className="text-label-caps text-[10px] text-[var(--color-accent)]/50">{fmtPrice(p.price)}</p>
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {wishlistProducts.map(p => (
+                        <Link key={p.id} href={`/store/${slug}/products/${p.id}`}
+                          className="group border border-black/8 rounded overflow-hidden hover:border-[var(--color-primary)]/30 transition-colors">
+                          <div className="relative aspect-square bg-[var(--color-secondary)]">
+                            {p.image_url && <Image src={p.image_url} alt={p.name} fill sizes="33vw" className="object-cover" />}
                           </div>
-                          <span className="text-label-caps text-[10px] bg-[var(--color-primary)] text-white px-3 py-1.5">
-                            ADD
-                          </span>
+                          <div className="p-4 flex items-center justify-between">
+                            <div>
+                              <p className="text-body-md font-medium group-hover:text-[var(--color-primary)] transition-colors">{p.name}</p>
+                              <p className="text-label-caps text-[10px] text-[var(--color-accent)]/50">{fmtPrice(p.price)}</p>
+                            </div>
+                            <span className="text-label-caps text-[10px] bg-[var(--color-primary)] text-white px-3 py-1.5">
+                              ADD
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                    {wishlistTotal > wishlistPageSize && (
+                      <div className="flex items-center justify-between pt-6 mt-6 border-t border-black/8">
+                        <p className="text-[11px] text-[var(--color-accent)]/40">
+                          {(wishlistPage - 1) * wishlistPageSize + 1}–{Math.min(wishlistPage * wishlistPageSize, wishlistTotal)} dari {wishlistTotal} item
+                        </p>
+                        <div className="flex items-center gap-2">
+                          {wishlistPage > 1
+                            ? <Link href={`/store/${slug}/profile?wpage=${wishlistPage - 1}`}
+                                className="text-label-caps text-[10px] border border-black/15 px-3 py-1.5 hover:bg-[var(--color-secondary)] transition-colors">
+                                ← Sebelumnya
+                              </Link>
+                            : <span className="text-label-caps text-[10px] border border-black/10 px-3 py-1.5 opacity-30">← Sebelumnya</span>
+                          }
+                          <span className="text-[11px] text-[var(--color-accent)]/40">{wishlistPage} / {Math.ceil(wishlistTotal / wishlistPageSize)}</span>
+                          {wishlistPage < Math.ceil(wishlistTotal / wishlistPageSize)
+                            ? <Link href={`/store/${slug}/profile?wpage=${wishlistPage + 1}`}
+                                className="text-label-caps text-[10px] border border-black/15 px-3 py-1.5 hover:bg-[var(--color-secondary)] transition-colors">
+                                Berikutnya →
+                              </Link>
+                            : <span className="text-label-caps text-[10px] border border-black/10 px-3 py-1.5 opacity-30">Berikutnya →</span>
+                          }
                         </div>
-                      </Link>
-                    ))}
-                  </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { OrdersClient } from './_orders-client'
+import { StoreFooter } from '@/components/store/store-footer'
 
 interface Props { params: Promise<{ slug: string }> }
 
@@ -21,5 +22,10 @@ export default async function MyOrdersPage({ params }: Props) {
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
 
-  return <OrdersClient slug={slug} tenant={tenant} orders={orders ?? []} />
+  return (
+    <>
+      <OrdersClient slug={slug} tenant={tenant} orders={orders ?? []} />
+      <StoreFooter tenant={tenant} />
+    </>
+  )
 }

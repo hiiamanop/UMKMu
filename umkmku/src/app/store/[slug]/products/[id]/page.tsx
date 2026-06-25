@@ -12,6 +12,43 @@ interface Props {
 
 const SHIPPING_TEXT = 'Pengiriman gratis untuk pembelian di atas Rp 300.000. Kami menerima pengembalian dalam 7 hari untuk produk yang belum dibuka. Kemasan kami 100% dapat didaur ulang.'
 
+export async function generateMetadata({ params }: Props) {
+  const { slug, id } = await params
+  const supabase = createServiceClient()
+  const [{ data: tenant }, { data: product }] = await Promise.all([
+    supabase.from('tenants').select('brand_name, hero_image_url, logo_url').eq('slug', slug).single(),
+    supabase.from('products').select('name, description, price, image_url').eq('id', id).single(),
+  ])
+  if (!tenant || !product) return {}
+
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000'
+  const isLocal = rootDomain.startsWith('localhost')
+  const storeUrl = isLocal ? `http://${rootDomain}/store/${slug}` : `https://${slug}.${rootDomain}`
+  const productUrl = `${storeUrl}/products/${id}`
+  const title = product.name
+  const description = product.description ?? `${product.name} dari ${tenant.brand_name}. Produk skincare lokal Indonesia.`
+  const image = product.image_url ?? tenant.hero_image_url ?? null
+
+  return {
+    title,
+    description,
+    alternates: { canonical: productUrl },
+    openGraph: {
+      type: 'website',
+      url: productUrl,
+      title: `${title} — ${tenant.brand_name}`,
+      description,
+      ...(image ? { images: [{ url: image, width: 1200, height: 1200, alt: title }] } : {}),
+    },
+    twitter: {
+      card: image ? 'summary_large_image' : 'summary',
+      title: `${title} — ${tenant.brand_name}`,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  }
+}
+
 export default async function ProductDetailPage({ params }: Props) {
   const { slug, id } = await params
   const supabase = createServiceClient()
@@ -49,8 +86,32 @@ export default async function ProductDetailPage({ params }: Props) {
     { key: 'shipping', label: 'PENGIRIMAN & PENGEMBALIAN', content: SHIPPING_TEXT },
   ]
 
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000'
+  const isLocal = rootDomain.startsWith('localhost')
+  const storeUrl = isLocal ? `http://${rootDomain}/store/${slug}` : `https://${slug}.${rootDomain}`
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description ?? undefined,
+    image: product.image_url ?? undefined,
+    url: `${storeUrl}/products/${id}`,
+    brand: { '@type': 'Brand', name: tenant.brand_name },
+    ...(product.price ? {
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'IDR',
+        price: product.price,
+        availability: product.is_active ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        url: marketplaceUrl ?? `${storeUrl}/products/${id}`,
+      }
+    } : {}),
+  }
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <main className="max-w-[1280px] mx-auto">
         {/* Product Hero — 7/5 grid */}
         <section className="grid grid-cols-1 md:grid-cols-12 gap-8 px-6 md:px-16 py-16 md:py-24">
