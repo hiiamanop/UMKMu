@@ -47,17 +47,43 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
   const [sending, setSending] = useState(false)
   const [orderStatus, setOrderStatus] = useState(order.status)
   const fileRef = useRef<HTMLInputElement>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const msgsRef = useRef<HTMLDivElement>(null)
+  const [msgsReady, setMsgsReady] = useState(false)
 
+  const scrollToBottom = (onDone?: () => void) => {
+    const el = msgsRef.current
+    if (!el) { onDone?.(); return }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+      onDone?.()
+    }))
+  }
+
+  // Same pattern as dashboard: scroll then reveal whenever messages update
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length === 0) return
+    scrollToBottom(() => setMsgsReady(true))
   }, [messages])
+
+  async function compressImage(file: File): Promise<Blob> {
+    return new Promise(resolve => {
+      const img = document.createElement('img')
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        canvas.getContext('2d')!.drawImage(img, 0, 0)
+        canvas.toBlob(b => resolve(b ?? file), 'image/jpeg', 0.88)
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
 
   async function uploadFile(file: File): Promise<string | null> {
     const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `order-proofs/${order.id}/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+    const compressed = await compressImage(file)
+    const path = `order-proofs/${order.id}/${Date.now()}.jpg`
+    const { error } = await supabase.storage.from('product-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
     if (error) return null
     const { data } = supabase.storage.from('product-images').getPublicUrl(path)
     return data.publicUrl
@@ -127,7 +153,7 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
   const statusCls = STATUS_COLOR[orderStatus] ?? 'text-black/50 bg-black/5'
 
   return (
-    <div className="min-h-screen bg-[var(--color-secondary)] flex flex-col">
+    <div className="bg-[var(--color-secondary)] flex flex-col overflow-hidden" style={{ height: 'calc(100vh - 68px)' }}>
 
       {/* Header */}
       <div className="bg-white border-b border-black/10 px-4 md:px-8 py-4 flex items-center gap-4 sticky top-[68px] z-10">
@@ -151,10 +177,35 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
         </Link>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 max-w-[720px] w-full mx-auto px-4 py-6 space-y-4">
+      {/* Messages — wrapper keeps flex-1 always in flow; opacity hides without layout shift */}
+      <div className="flex-1 relative overflow-hidden">
+        {!msgsReady && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <div className="w-6 h-6 border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)] rounded-full animate-spin" />
+          </div>
+        )}
+        <div ref={msgsRef} style={{ opacity: msgsReady ? 1 : 0 }}
+          className="h-full overflow-y-auto max-w-[720px] w-full mx-auto px-4 py-6 space-y-4">
         {messages.map(msg => {
           const isMerchant = msg.sender_type === 'merchant'
+          const isAudit = msg.sender_type === 'ai' && msg.content?.startsWith('📋')
+
+          // AI audit card — tampil terpisah bukan bubble
+          if (isAudit) {
+            const isRejected = msg.content?.includes('❌')
+            const isWarning = msg.content?.includes('⚠️')
+            const borderCls = isRejected ? 'border-red-200 bg-red-50' : isWarning ? 'border-yellow-200 bg-yellow-50' : 'border-green-200 bg-green-50'
+            const textCls = isRejected ? 'text-red-700' : isWarning ? 'text-yellow-700' : 'text-green-700'
+            return (
+              <div key={msg.id} className={`border rounded-xl px-4 py-3 ${borderCls}`}>
+                <p className={`text-[11px] leading-relaxed whitespace-pre-line ${textCls}`}>{msg.content}</p>
+                <p className="text-[10px] mt-1 opacity-50">
+                  {new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            )
+          }
+
           return (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${
@@ -162,34 +213,22 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
                 ? 'bg-[var(--color-primary)] text-white rounded-tr-sm'
                 : 'bg-white border border-black/8 text-[var(--color-accent)] rounded-tl-sm'
             }`}>
-              {/* Label pengirim untuk pesan dari toko */}
               {msg.role === 'assistant' && (
                 <p className="text-[9px] tracking-widest uppercase font-sans mb-1.5 text-[var(--color-accent)]/40">
                   {isMerchant ? '👤 Tim Toko' : '🤖 AI Assistant'}
                 </p>
               )}
-              {/* QRIS image from assistant */}
               {msg.role === 'assistant' && msg.attachment_url && (
                 <div className="mb-3 bg-white p-3 rounded-lg inline-block">
-                  <Image
-                    src={msg.attachment_url}
-                    alt="QRIS"
-                    width={200}
-                    height={200}
-                    className="block"
-                  />
+                  <Image src={msg.attachment_url} alt="QRIS" width={200} height={200} className="block"
+                    onLoad={() => scrollToBottom()} />
                 </div>
               )}
-              {/* User payment proof */}
               {msg.role === 'user' && msg.attachment_url && (
                 <div className="mb-2">
-                  <Image
-                    src={msg.attachment_url}
-                    alt="Bukti bayar"
-                    width={240}
-                    height={180}
+                  <Image src={msg.attachment_url} alt="Bukti bayar" width={240} height={180}
                     className="rounded-lg object-cover max-h-[200px] w-auto"
-                  />
+                    onLoad={() => scrollToBottom()} />
                 </div>
               )}
               {msg.content && (
@@ -215,8 +254,8 @@ export function OrderChatClient({ slug, order, tenant, initialMessages }: Props)
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
-      </div>
+        </div>{/* end msgsRef */}
+      </div>{/* end wrapper */}
 
       {/* Input bar */}
       {(orderStatus === 'pending_payment' || orderStatus === 'payment_submitted') && (

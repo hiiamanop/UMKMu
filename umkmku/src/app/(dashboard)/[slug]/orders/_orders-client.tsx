@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
-import { Package, Check, Truck, X, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react'
+import { Package, Check, Truck, X, ChevronDown, ChevronUp, MessageSquare, History, ZoomIn } from 'lucide-react'
 import { updateOrderStatus, submitShipping } from './actions'
 
 const STATUS_LABEL: Record<string, string> = {
@@ -25,6 +25,94 @@ const STATUS_COLOR: Record<string, string> = {
 }
 
 function fmt(n: number) { return 'Rp ' + n.toLocaleString('id-ID') }
+
+function PaymentHistory({ orderId, slug }: { orderId: string; slug: string }) {
+  const [open, setOpen] = useState(false)
+  const [records, setRecords] = useState<{ proof: any; audit: any }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [zoomSrc, setZoomSrc] = useState<string | null>(null)
+
+  async function openModal() {
+    setOpen(true)
+    if (records.length > 0) return
+    setLoading(true)
+    const res = await fetch(`/api/merchant-chat?orderId=${orderId}&slug=${slug}`)
+    const data = await res.json()
+    const msgs: any[] = data.messages ?? []
+    const pairs: { proof: any; audit: any }[] = []
+    for (let i = 0; i < msgs.length; i++) {
+      const m = msgs[i]
+      if (m.role === 'user' && m.attachment_url) {
+        const audit = msgs.slice(i + 1, i + 4).find(
+          (n: any) => n.role === 'assistant' && n.sender_type === 'ai' && n.content?.includes('📋')
+        ) ?? null
+        pairs.push({ proof: m, audit })
+      }
+    }
+    setRecords(pairs)
+    setLoading(false)
+  }
+
+  return (
+    <>
+      <button onClick={openModal}
+        className="flex items-center gap-1.5 text-label-caps text-[10px] border border-black/15 px-3 py-2 hover:bg-[var(--color-secondary)] transition-colors">
+        <History size={11} />RIWAYAT BUKTI
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => setOpen(false)}>
+          <div className="bg-white rounded-lg w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-black/8 shrink-0">
+              <p className="text-label-caps text-[11px] tracking-widest">RIWAYAT BUKTI BAYAR</p>
+              <button onClick={() => setOpen(false)} className="text-[var(--color-accent)]/40 hover:text-[var(--color-accent)] transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="overflow-y-auto px-6 py-5 space-y-5">
+              {loading && <p className="text-[12px] text-[var(--color-accent)]/40 text-center py-8">Memuat...</p>}
+              {!loading && records.length === 0 && (
+                <p className="text-[12px] text-[var(--color-accent)]/40 italic text-center py-8">Belum ada bukti yang dikirim.</p>
+              )}
+              {records.map((r, i) => (
+                <div key={i} className="flex gap-4 items-start pb-5 border-b border-black/5 last:border-0 last:pb-0">
+                  <span className="text-[10px] text-[var(--color-accent)]/30 font-mono pt-1 shrink-0 w-4">#{i + 1}</span>
+                  <button onClick={() => setZoomSrc(r.proof.attachment_url)} className="relative shrink-0 cursor-zoom-in group">
+                    <Image src={r.proof.attachment_url} alt={`Bukti ${i + 1}`} width={88} height={88}
+                      className="rounded object-cover w-[88px] h-[88px] border border-black/10" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors rounded flex items-center justify-center">
+                      <ZoomIn size={18} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] text-[var(--color-accent)]/40 font-sans mb-2">
+                      {new Date(r.proof.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    {r.audit ? (
+                      <p className="text-[12px] leading-relaxed text-[var(--color-accent)]/70 whitespace-pre-line">{r.audit.content}</p>
+                    ) : (
+                      <p className="text-[11px] text-[var(--color-accent)]/30 italic">Penilaian AI tidak tersedia</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Zoom overlay */}
+          {zoomSrc && (
+            <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10" onClick={() => setZoomSrc(null)}>
+              <Image src={zoomSrc} alt="Bukti bayar" width={600} height={600} className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg" />
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  )
+}
 
 interface Props { slug: string; orders: any[] }
 
@@ -166,6 +254,9 @@ export function OrdersClient({ slug, orders }: Props) {
                       className="flex items-center gap-2 text-label-caps text-[10px] border border-black/15 px-4 py-2 hover:bg-[var(--color-secondary)] transition-colors">
                       <MessageSquare size={12} />LIHAT CHAT
                     </Link>
+
+                    {/* Payment proof history */}
+                    <PaymentHistory orderId={order.id} slug={slug} />
 
                     {/* Verify payment */}
                     {order.status === 'payment_submitted' && (

@@ -5,6 +5,37 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
+function ResetPassword({ email }: { email: string }) {
+  const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
+
+  async function handleReset() {
+    if (!email) { alert('Isi email kamu dulu di form di atas.'); return }
+    setSending(true)
+    const supabase = createClient()
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    })
+    setSent(true)
+    setSending(false)
+  }
+
+  if (sent) return (
+    <p className="text-center text-xs text-green-600 mt-6">
+      Link reset dikirim ke <strong>{email}</strong>. Cek inbox kamu.
+    </p>
+  )
+
+  return (
+    <p className="text-center text-xs text-gray-400 mt-6">
+      <button onClick={handleReset} disabled={sending}
+        className="text-gray-700 hover:underline font-medium disabled:opacity-50">
+        {sending ? 'Mengirim...' : 'Lupa password?'}
+      </button>
+    </p>
+  )
+}
+
 type Mode = 'loading' | 'login' | 'claim'
 
 export default function DashboardLoginPage() {
@@ -235,12 +266,9 @@ export default function DashboardLoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Belum punya toko?{' '}
-          <a href="/onboarding" className="text-gray-700 hover:underline font-medium">
-            Mulai onboarding
-          </a>
-        </p>
+        {mode === 'login' && (
+          <ResetPassword email={email} />
+        )}
       </div>
     </div>
   )

@@ -61,8 +61,15 @@ export async function POST(req: NextRequest) {
     const service2 = createServiceClient()
     const { data: tenant2 } = await service2.from('tenants').select('brand_name').eq('id', order.tenant_id).single()
     const aiReply = await validatePayment(order, attachmentUrl, tenant2?.brand_name ?? null)
+
+    // Friendly reply to customer
     await supabase.from('order_chats').insert({ order_id: orderId, role: 'assistant', content: aiReply.message })
-    // Always update status to payment_submitted + save AI result regardless of valid/invalid
+
+    // Audit record: AI assessment (permanent in chat history)
+    const confidenceLabel = aiReply.confidence >= 75 ? '✅ Valid' : aiReply.confidence >= 50 ? '⚠️ Perlu Dicek' : '❌ Ditolak'
+    const auditMsg = `📋 *Hasil Validasi AI*\nStatus: ${confidenceLabel} (${aiReply.confidence}%)\nCatatan: ${aiReply.note}`
+    await supabase.from('order_chats').insert({ order_id: orderId, role: 'assistant', sender_type: 'ai', content: auditMsg })
+
     const service = createServiceClient()
     await service.from('orders').update({
       status: 'payment_submitted',

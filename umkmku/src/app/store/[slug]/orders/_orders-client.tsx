@@ -88,23 +88,32 @@ function ChatPanel({ slug, order, tenant }: { slug: string; order: Order; tenant
   const [zoomSrc, setZoomSrc] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [msgsReady, setMsgsReady] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const msgsRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = (onDone?: () => void) => {
+    const el = msgsRef.current
+    if (!el) { onDone?.(); return }
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+      onDone?.()
+    }))
+  }
 
   useEffect(() => {
-    setLoading(true)
+    setMsgsReady(false)
     setMessages([])
     setZoomSrc(null)
     setOrderStatus(order.status)
     fetch(`/api/order-chat?orderId=${order.id}`)
       .then(r => r.json())
       .then(d => { setMessages(d.messages ?? []); setOrderStatus(d.status ?? order.status) })
-      .finally(() => setLoading(false))
   }, [order.id])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length === 0) return
+    scrollToBottom(() => setMsgsReady(true))
   }, [messages])
 
   // Poll for status change while waiting for merchant to verify/reject payment
@@ -122,11 +131,25 @@ function ChatPanel({ slug, order, tenant }: { slug: string; order: Order; tenant
     return () => clearInterval(interval)
   }, [orderStatus, order.id])
 
+  async function compressImage(file: File): Promise<Blob> {
+    return new Promise(resolve => {
+      const img = document.createElement('img')
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        canvas.getContext('2d')!.drawImage(img, 0, 0)
+        canvas.toBlob(b => resolve(b ?? file), 'image/jpeg', 0.88)
+      }
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
   async function uploadFile(file: File): Promise<string | null> {
     const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `order-proofs/${order.id}/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+    const compressed = await compressImage(file)
+    const path = `order-proofs/${order.id}/${Date.now()}.jpg`
+    const { error } = await supabase.storage.from('product-images').upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
     if (error) return null
     return supabase.storage.from('product-images').getPublicUrl(path).data.publicUrl
   }
@@ -191,9 +214,15 @@ function ChatPanel({ slug, order, tenant }: { slug: string; order: Order; tenant
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ background: 'var(--color-secondary)' }}>
-        {loading && <p className="text-center text-[12px] text-[var(--color-accent)]/40 py-10">Memuat pesan...</p>}
-        {!loading && messages.map(msg => (
+      <div className="flex-1 relative overflow-hidden">
+        {!msgsReady && (
+          <div className="absolute inset-0 flex items-center justify-center z-10" style={{ background: 'var(--color-secondary)' }}>
+            <div className="w-5 h-5 border-2 border-[var(--color-primary)]/30 border-t-[var(--color-primary)] rounded-full animate-spin" />
+          </div>
+        )}
+        <div ref={msgsRef} style={{ opacity: msgsReady ? 1 : 0, background: 'var(--color-secondary)' }}
+          className="h-full overflow-y-auto px-4 py-4 space-y-3">
+        {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${msg.role === 'user' ? 'bg-[var(--color-primary)] text-white rounded-tr-sm' : 'bg-white border border-black/8 text-[var(--color-accent)] rounded-tl-sm'}`}>
               {msg.role === 'assistant' && msg.attachment_url && (
@@ -224,8 +253,8 @@ function ChatPanel({ slug, order, tenant }: { slug: string; order: Order; tenant
             </div>
           </div>
         )}
-        <div ref={bottomRef} />
-      </div>
+        </div>{/* end msgsRef */}
+      </div>{/* end wrapper */}
 
       {/* Input */}
       {orderStatus === 'pending_payment' && (
@@ -275,7 +304,7 @@ function ChatPanel({ slug, order, tenant }: { slug: string; order: Order; tenant
         </div>
       )}
 
-      {!['pending_payment', 'payment_submitted', 'shipped'].includes(orderStatus) && !loading && (
+      {!['pending_payment', 'payment_submitted', 'shipped'].includes(orderStatus) && msgsReady && (
         <div className="bg-white border-t border-black/10 px-4 py-3 text-center shrink-0">
           <p className="text-[12px] text-[var(--color-accent)]/40">{STATUS_LABEL[orderStatus] ?? 'Pesanan diperbarui'}</p>
         </div>
