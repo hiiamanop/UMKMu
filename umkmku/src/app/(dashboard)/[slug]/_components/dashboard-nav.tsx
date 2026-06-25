@@ -14,6 +14,7 @@ const topTabs = [
   { label: 'Chat', path: '/chats' },
   { label: 'Tampilan', path: '/appearance' },
   { label: 'Chatbot', path: '/chatbot' },
+  { label: 'Langganan', path: '/subscription' },
 ]
 
 const pageSubTabs = [

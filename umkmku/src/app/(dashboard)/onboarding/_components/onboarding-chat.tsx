@@ -36,6 +36,7 @@ export function OnboardingChat() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const plan = searchParams.get('plan') ?? 'free'
+  const invoiceId = searchParams.get('invoice')
 
   const [step, setStep] = useState<Step>('category')
   const [category, setCategory] = useState<CategoryType | null>(null)
@@ -65,7 +66,7 @@ export function OnboardingChat() {
       const res = await fetch('/api/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category, description }),
+        body: JSON.stringify({ category, description, invoiceId }),
       })
       if (!res.ok) {
         const data = await res.json()

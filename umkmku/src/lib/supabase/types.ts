@@ -248,6 +248,25 @@ export interface TopUpPackage {
   is_active: boolean
 }
 
+export interface SubscriptionInvoice {
+  id: string
+  external_id: string
+  plan_id: SubscriptionPlanId
+  email: string
+  full_name: string | null
+  amount: number
+  ppn: number
+  xendit_fee: number
+  final_amount: number
+  xendit_invoice_id: string | null
+  xendit_invoice_url: string | null
+  status: 'pending' | 'paid' | 'expired' | 'failed'
+  paid_at: string | null
+  tenant_id: string | null
+  onboarding_completed_at: string | null
+  created_at: string
+}
+
 export interface TopUpOrder {
   id: string
   tenant_id: string

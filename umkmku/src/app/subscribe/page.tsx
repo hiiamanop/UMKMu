@@ -33,7 +33,7 @@ const plans = [
     period: '/bulan',
     desc: 'Untuk brand yang aktif berjualan.',
     cta: 'Berlangganan Business',
-    href: '/onboarding?plan=business',
+    href: '/subscribe/checkout?plan=business',
     popular: true,
     highlight: true,
     features: [
@@ -52,7 +52,7 @@ const plans = [
     period: '/bulan',
     desc: 'Untuk brand dengan volume tinggi.',
     cta: 'Berlangganan Enterprise',
-    href: '/onboarding?plan=enterprise',
+    href: '/subscribe/checkout?plan=enterprise',
     popular: false,
     highlight: false,
     features: [

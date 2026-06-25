@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const category: CategoryType = body.category?.trim().toLowerCase()
     const description: string = body.description?.trim()
+    const invoiceId: string | null = body.invoiceId ?? null
 
     // Validate category
     if (!category || !VALID_CATEGORIES.includes(category)) {
@@ -148,15 +149,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Buat subscription trial otomatis untuk tenant baru
+    // Tentukan plan dari invoice (jika paid) atau default free trial
+    let subPlanId = 'free'
+    let subStatus: 'trial' | 'active' = 'trial'
+    let periodEnd: string | undefined
+
+    if (invoiceId) {
+      const { data: inv } = await supabase
+        .from('subscription_invoices')
+        .select('plan_id, status')
+        .eq('id', invoiceId)
+        .single()
+
+      if (inv?.status === 'paid') {
+        subPlanId = inv.plan_id
+        subStatus = 'active'
+        periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        // Link invoice ke tenant
+        await supabase
+          .from('subscription_invoices')
+          .update({ tenant_id: tenant.id, onboarding_completed_at: new Date().toISOString() })
+          .eq('id', invoiceId)
+      }
+    }
+
     const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const { data: newSub } = await supabase
       .from('tenant_subscriptions')
       .insert({
         tenant_id: tenant.id,
-        plan_id: 'free',
-        status: 'trial',
-        trial_ends_at: trialEndsAt,
+        plan_id: subPlanId,
+        status: subStatus,
+        trial_ends_at: subStatus === 'trial' ? trialEndsAt : null,
+        current_period_start: subStatus === 'active' ? new Date().toISOString() : null,
+        current_period_end: subStatus === 'active' ? periodEnd : null,
       })
       .select('id')
       .single()
