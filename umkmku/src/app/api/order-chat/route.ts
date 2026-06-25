@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { geminiChat, geminiVision } from '@/lib/ai/gemini'
+import { notifyMerchantPaymentSubmitted } from '@/lib/notifications/whatsapp'
 
 // GET /api/order-chat?orderId=xxx — load messages
 export async function GET(req: NextRequest) {
@@ -59,8 +60,19 @@ export async function POST(req: NextRequest) {
   // Payment proof — always submit to dashboard, AI result determines confidence only
   if (attachmentUrl && order.status === 'pending_payment') {
     const service2 = createServiceClient()
-    const { data: tenant2 } = await service2.from('tenants').select('brand_name').eq('id', order.tenant_id).single()
+    const { data: tenant2 } = await service2.from('tenants').select('brand_name, whatsapp_number').eq('id', order.tenant_id).single()
     const aiReply = await validatePayment(order, attachmentUrl, tenant2?.brand_name ?? null)
+
+    // Notif WA ke merchant — customer sudah kirim bukti bayar
+    if (tenant2?.whatsapp_number) {
+      notifyMerchantPaymentSubmitted({
+        merchantWa: tenant2.whatsapp_number,
+        brandName: tenant2.brand_name,
+        customerName: order.customer_name ?? '',
+        totalAmount: order.total_amount,
+        orderId: order.id,
+      })
+    }
 
     // Friendly reply to customer
     await supabase.from('order_chats').insert({ order_id: orderId, role: 'assistant', content: aiReply.message })

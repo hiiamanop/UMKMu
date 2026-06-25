@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { notifyMerchantNewOrder } from '@/lib/notifications/whatsapp'
+import { notifyMerchantNewOrder, notifyCustomerOrderCreated } from '@/lib/notifications/whatsapp'
 
 interface CartItem {
   productId: string
@@ -117,10 +117,19 @@ Setelah membayar, kirimkan bukti pembayaran (screenshot) ke chat ini ya! 📸`
     attachment_url: tenant.qris_image_url || null,
   })
 
-  // Notifikasi WA ke merchant (fire-and-forget, tidak blokir response)
+  // Notifikasi WA — fire-and-forget, tidak blokir response
   if (tenant.whatsapp_number) {
     notifyMerchantNewOrder({
       merchantWa: tenant.whatsapp_number,
+      brandName: tenant.brand_name,
+      customerName: customerName,
+      totalAmount: totalAmount,
+      orderId: order.id,
+    })
+  }
+  if (customerWhatsapp) {
+    notifyCustomerOrderCreated({
+      customerWa: customerWhatsapp,
       brandName: tenant.brand_name,
       customerName: customerName,
       totalAmount: totalAmount,
