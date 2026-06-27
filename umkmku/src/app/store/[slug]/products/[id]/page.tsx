@@ -5,6 +5,8 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { StoreFooter } from '@/components/store/store-footer'
 import { ProductCard } from '@/components/store/product-card'
 import { ParfumProductCard } from '@/components/templates/parfum/parfum-product-card'
+import { FnbProductCard } from '@/components/templates/fnb/fnb-product-card'
+import { FnbFooter } from '@/components/templates/fnb/fnb-footer'
 import { ProductDetailClient } from './_product-detail-client'
 
 interface Props {
@@ -268,6 +270,123 @@ export default async function ProductDetailPage({ params }: Props) {
         </main>
 
         <StoreFooter tenant={tenant} />
+      </>
+    )
+  }
+
+  // ── FNB product detail ────────────────────────────────────────────────────────
+  if (product.category_type === 'fdb' || tenant.category === 'fdb') {
+    const fdbData = product.fdb_data ?? {}
+    const dietary: string[] = fdbData.dietary ?? []
+    const ingredients: string[] = fdbData.ingredients ?? []
+    const allergens: string[] = fdbData.allergens ?? []
+    const prepTime: number | undefined = fdbData.preparation_time
+    const servings: number | undefined = fdbData.servings
+
+    const DIETARY_EMOJI: Record<string, string> = {
+      vegan: '🌱',
+      'gluten-free': '🌾',
+      halal: '☪️',
+      organic: '🌿',
+    }
+
+    const accordions = [
+      ...(ingredients.length > 0 ? [{
+        key: 'ingredients',
+        label: 'BAHAN-BAHAN',
+        content: ingredients.join(', '),
+      }] : []),
+      ...(allergens.length > 0 ? [{
+        key: 'allergens',
+        label: 'ALERGEN',
+        content: allergens.join(', '),
+      }] : []),
+      { key: 'shipping', label: 'PENGIRIMAN & PENGEMBALIAN', content: SHIPPING_TEXT },
+    ]
+
+    return (
+      <>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
+            {/* Image */}
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-gray-50">
+              {product.image_url ? (
+                <Image src={product.image_url} alt={product.name} fill priority sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-8xl">🍱</div>
+              )}
+            </div>
+
+            {/* Info */}
+            <div className="flex flex-col gap-5">
+              {/* Dietary badges */}
+              {dietary.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {dietary.map((d) => (
+                    <span key={d} className="text-xs bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-3 py-1 rounded-full font-medium capitalize">
+                      {DIETARY_EMOJI[d] ?? '✓'} {d}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <h1 className="text-3xl font-black text-gray-900 leading-tight">{product.name}</h1>
+
+              {product.description && (
+                <p className="text-gray-600 leading-relaxed">{product.description}</p>
+              )}
+
+              {/* Specs */}
+              <div className="flex flex-wrap gap-3">
+                {prepTime && (
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
+                    <p className="text-lg font-black text-gray-900">{prepTime}</p>
+                    <p className="text-xs text-gray-400">menit</p>
+                  </div>
+                )}
+                {servings && (
+                  <div className="bg-gray-50 rounded-xl px-4 py-3 text-center">
+                    <p className="text-lg font-black text-gray-900">{servings}</p>
+                    <p className="text-xs text-gray-400">porsi</p>
+                  </div>
+                )}
+              </div>
+
+              {product.price && (
+                <p className="text-2xl font-black text-[var(--color-primary)]">
+                  Rp {product.price.toLocaleString('id-ID')}
+                </p>
+              )}
+
+              <ProductDetailClient
+                accordions={accordions}
+                product={{
+                  id: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image_url: product.image_url,
+                  stock_quantity: product.stock_quantity ?? null,
+                  is_preorder: product.is_preorder ?? false,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Related products */}
+          {(related ?? []).length > 0 && (
+            <section className="mt-16">
+              <h3 className="text-xl font-black text-gray-900 mb-6">Menu Lainnya</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {(related ?? []).map((rp) => (
+                  <FnbProductCard key={rp.id} product={rp} slug={slug} />
+                ))}
+              </div>
+            </section>
+          )}
+        </main>
+
+        <FnbFooter tenant={tenant} />
       </>
     )
   }

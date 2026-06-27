@@ -11,6 +11,7 @@ import { StoreFooter } from '@/components/store/store-footer'
 import { ChatbotWidgetLoader } from '@/components/store/chatbot-widget-loader'
 import { FashionHomePage } from '@/components/templates/fashion/fashion-home-page'
 import { ParfumHomePage } from '@/components/templates/parfum/parfum-home-page'
+import { FnbHomePage } from '@/components/templates/fnb/fnb-home-page'
 import type { Testimonial } from '@/lib/supabase/types'
 
 interface Props {
@@ -37,6 +38,24 @@ export default async function StorePage({ params }: Props) {
 
     return (
       <ParfumHomePage
+        tenant={tenant}
+        products={products}
+        testimonials={(testimonials ?? []) as Testimonial[]}
+      />
+    )
+  }
+
+  // FnB template
+  if (tenant.category === 'fdb') {
+    const { data: testimonials } = await supabase
+      .from('testimonials')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .order('sort_order')
+
+    return (
+      <FnbHomePage
         tenant={tenant}
         products={products}
         testimonials={(testimonials ?? []) as Testimonial[]}

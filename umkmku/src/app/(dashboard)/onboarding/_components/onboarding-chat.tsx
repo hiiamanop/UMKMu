@@ -52,6 +52,18 @@ export function OnboardingChat() {
   const [showPw, setShowPw] = useState(false)
   const [signupLoading, setSignupLoading] = useState(false)
   const [signupError, setSignupError] = useState<string | null>(null)
+  const [emailIsMerchant, setEmailIsMerchant] = useState(false)
+
+  async function checkEmail(val: string) {
+    if (!val || !val.includes('@')) return
+    const res = await fetch('/api/onboarding/check-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: val }),
+    })
+    const data = await res.json()
+    setEmailIsMerchant(!!data.isMerchant)
+  }
 
   const stepIndex = step === 'category' ? 0 : step === 'description' || step === 'creating' ? 1 : 2
 
@@ -99,6 +111,20 @@ export function OnboardingChat() {
       options: { data: { full_name: fullName } },
     })
 
+    // Deteksi email sudah terdaftar:
+    // Supabase mengembalikan error eksplisit ATAU user dengan identities kosong
+    const isExistingUser =
+      signupErr?.message?.toLowerCase().includes('already') ||
+      (authData.user?.identities?.length ?? 1) === 0
+
+    if (isExistingUser) {
+      setSignupError(
+        `Email ini sudah terdaftar. Silakan login dulu di halaman login toko Anda, atau gunakan email lain untuk membuat merchant baru.`
+      )
+      setSignupLoading(false)
+      return
+    }
+
     if (signupErr) {
       setSignupError(signupErr.message)
       setSignupLoading(false)
@@ -114,7 +140,6 @@ export function OnboardingChat() {
       })
     }
 
-    // Selalu minta verifikasi email dulu sebelum masuk dashboard
     setStep('done')
     setSignupLoading(false)
   }
@@ -313,14 +338,19 @@ export function OnboardingChat() {
                   <input
                     type="email"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={e => { setEmail(e.target.value); setEmailIsMerchant(false) }}
                     placeholder="email@bisnis.com"
                     required
                     className={inputCls}
                     style={inputStyle}
                     onFocus={e => (e.target.style.borderColor = PRIMARY)}
-                    onBlur={e => (e.target.style.borderColor = BORDER)}
+                    onBlur={e => { e.target.style.borderColor = BORDER; checkEmail(e.target.value) }}
                   />
+                  {emailIsMerchant && (
+                    <p className="mt-1.5 text-xs font-medium px-3 py-2 rounded-lg" style={{ background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa' }}>
+                      Email ini sudah tersambung dengan merchant.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>Password</label>
@@ -397,22 +427,22 @@ export function OnboardingChat() {
                 <CheckCircle2 size={36} className="text-green-500" />
               </div>
               <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-bold" style={{ color: PRIMARY }}>Satu langkah lagi! 📬</h2>
+                <h2 className="text-2xl font-bold" style={{ color: PRIMARY }}>Akun berhasil dibuat! 🎉</h2>
                 <p className="text-sm leading-relaxed max-w-sm" style={{ color: TEXT_SEC }}>
-                  Kami kirim link verifikasi ke{' '}
+                  Kami mengirim link verifikasi ke{' '}
                   <strong style={{ color: PRIMARY }}>{email}</strong>.
                   <br /><br />
-                  Buka email, klik link verifikasi dari Supabase, lalu kembali ke sini untuk login.
+                  Buka email, klik link konfirmasi, lalu login ke dashboard.
                 </p>
               </div>
 
               <div className="w-full rounded-2xl p-5 text-sm text-left flex flex-col gap-3" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
                 {[
-                  '1. Buka inbox email kamu',
-                  '2. Cari email dari UMKMku / Supabase',
+                  '1. Buka inbox (cek juga folder Spam)',
+                  '2. Cari email dari noreply@mail.app.supabase.io',
                   plan !== 'free'
-                    ? '3. Klik link verifikasi → lanjut ke pembayaran'
-                    : '3. Klik link verifikasi → login ke dashboard',
+                    ? '3. Klik "Confirm your email" → lanjut bayar'
+                    : '3. Klik "Confirm your email" → login ke dashboard',
                 ].map(s => (
                   <div key={s} className="flex items-center gap-2" style={{ color: TEXT_SEC }}>
                     <span style={{ color: GOLD }}>→</span> {s}
@@ -420,11 +450,20 @@ export function OnboardingChat() {
                 ))}
               </div>
 
+              <div className="w-full rounded-2xl p-4 text-xs text-left" style={{ background: '#fff7ed', border: '1px solid #fed7aa' }}>
+                <strong style={{ color: '#9a3412' }}>Development mode?</strong>
+                <span style={{ color: '#9a3412' }}>{' '}Email masuk ke Supabase Inbucket:{' '}
+                  <a href="http://localhost:54324" target="_blank" rel="noopener noreferrer" className="underline font-mono">
+                    localhost:54324
+                  </a>
+                </span>
+              </div>
+
               <div className="flex flex-col gap-3 w-full">
                 <a
                   href={plan !== 'free'
                     ? `/subscribe/payment?plan=${plan}&slug=${result.slug}`
-                    : `/${result.slug}/login`}
+                    : `/store/${result.slug}/login`}
                   className="flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
                   style={{ background: PRIMARY }}
                 >
@@ -437,6 +476,7 @@ export function OnboardingChat() {
                     onClick={async () => {
                       const supabase = (await import('@/lib/supabase/client')).createClient()
                       await supabase.auth.resend({ type: 'signup', email })
+                      alert('Email konfirmasi sudah dikirim ulang.')
                     }}
                     className="underline"
                   >

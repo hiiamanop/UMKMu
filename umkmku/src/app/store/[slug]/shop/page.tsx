@@ -4,6 +4,8 @@ import { ShopPage } from '@/components/store/shop-page'
 import { StoreFooter } from '@/components/store/store-footer'
 import { ParfumShopPage } from '@/components/templates/parfum/parfum-shop-page'
 import { FashionShopPage } from '@/components/templates/fashion/fashion-shop-page'
+import { FnbShopPage } from '@/components/templates/fnb/fnb-shop-page'
+import { FnbFooter } from '@/components/templates/fnb/fnb-footer'
 
 const LIMIT = 12
 const ALL_SKIN_TYPES = ['oily', 'dry', 'combination', 'sensitive', 'normal']
@@ -21,6 +23,8 @@ interface Props {
     // fashion
     sizes?: string
     styles?: string
+    // fnb
+    dietary?: string
     // shared
     sort?: string
   }>
@@ -121,6 +125,62 @@ export default async function Page({ params, searchParams }: Props) {
           initialSort={sort}
         />
         <StoreFooter tenant={tenant} />
+      </>
+    )
+  }
+
+  // ── FNB ──────────────────────────────────────────────────────────────────────
+  if (tenant.category === 'fdb') {
+    const selectedDietary = sp.dietary?.split(',').filter(Boolean) ?? []
+
+    const { data: allForOptions } = await supabase
+      .from('products')
+      .select('fdb_data')
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+
+    const dietaryOptions = [...new Set(
+      (allForOptions ?? [])
+        .flatMap((p: { fdb_data: { dietary?: string[] } | null }) => p.fdb_data?.dietary ?? [])
+    )].sort()
+
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' })
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+
+    if (sort === 'price_asc') query = query.order('price', { ascending: true })
+    else if (sort === 'price_desc') query = query.order('price', { ascending: false })
+    else query = query.order('sort_order', { ascending: true })
+
+    const { data: allProducts } = await query
+
+    let filtered = allProducts ?? []
+    if (selectedDietary.length > 0) {
+      filtered = filtered.filter((p) =>
+        p.fdb_data?.dietary?.some((d: string) => selectedDietary.includes(d))
+      )
+    }
+
+    const totalCount = filtered.length
+    const totalPages = Math.ceil(totalCount / LIMIT)
+    const products = filtered.slice(offset, offset + LIMIT)
+
+    return (
+      <>
+        <FnbShopPage
+          tenant={tenant}
+          products={products}
+          slug={slug}
+          totalCount={totalCount}
+          currentPage={page}
+          totalPages={totalPages}
+          dietaryOptions={dietaryOptions}
+          initialDietary={selectedDietary}
+          initialSort={sort}
+        />
+        <FnbFooter tenant={tenant} />
       </>
     )
   }

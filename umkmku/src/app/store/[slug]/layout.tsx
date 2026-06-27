@@ -3,6 +3,7 @@ import { getTenantBySlug } from '@/lib/tenant'
 import { StoreNavbar } from '@/components/store/store-navbar'
 import { FashionNavbar } from '@/components/templates/fashion/fashion-navbar'
 import { ParfumNavbar } from '@/components/templates/parfum/parfum-navbar'
+import { FnbNavbar } from '@/components/templates/fnb/fnb-navbar'
 import { CartProvider } from '@/lib/cart-context'
 import { notFound } from 'next/navigation'
 
@@ -55,7 +56,9 @@ export default async function StoreLayout({ children, params }: Props) {
           ? <FashionNavbar tenant={tenant} />
           : tenant.category === 'parfum'
             ? <ParfumNavbar tenant={tenant} />
-            : <StoreNavbar tenant={tenant} />}
+            : tenant.category === 'fdb'
+              ? <FnbNavbar tenant={tenant} />
+              : <StoreNavbar tenant={tenant} />}
         {children}
       </CartProvider>
     </div>
