@@ -18,6 +18,8 @@ export async function createOrder(
   customerName: string,
   customerWhatsapp: string,
   shippingAddress: string,
+  promoCode?: string,
+  promoDiscount: number = 0,
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -112,7 +114,9 @@ export async function createOrder(
     }
   }
 
-  const totalAmount = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+  const discount = Math.min(promoDiscount, subtotal)
+  const totalAmount = subtotal - discount
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
 
   const { data: order, error: orderErr } = await supabase.from('orders').insert({
@@ -124,9 +128,17 @@ export async function createOrder(
     shipping_address: shippingAddress,
     status: 'pending_payment',
     expires_at: expiresAt,
+    promo_code: promoCode ?? null,
+    discount_amount: discount,
   }).select('id').single()
 
   if (orderErr || !order) return { error: 'Gagal membuat pesanan' }
+
+  // Increment used_count promo jika ada
+  if (promoCode && discount > 0) {
+    const { data: promo } = await service.from('promo_codes').select('used_count').eq('code', promoCode.toUpperCase()).single()
+    if (promo) await service.from('promo_codes').update({ used_count: promo.used_count + 1 }).eq('code', promoCode.toUpperCase())
+  }
 
   const orderItems = items.map(i => ({
     order_id: order.id,

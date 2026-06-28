@@ -9,9 +9,25 @@ export async function middleware(request: NextRequest) {
   const slug = extractSlug(hostname, rootDomain)
 
   if (!slug) {
-    // Main domain — tambah header x-pathname agar layout bisa tahu current path
+    const pathname = request.nextUrl.pathname
+
+    // Admin auth guard — proteksi semua /admin/* kecuali /admin/login
+    if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        { cookies: { getAll: () => request.cookies.getAll(), setAll: () => {} } }
+      )
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin/login'
+        return NextResponse.redirect(url)
+      }
+    }
+
     const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-pathname', request.nextUrl.pathname)
+    requestHeaders.set('x-pathname', pathname)
     return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
