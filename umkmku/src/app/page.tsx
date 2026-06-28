@@ -14,7 +14,7 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav style={{ borderBottom: `1px solid ${BORDER}` }} className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between h-16">
-          <span className="text-xl font-bold" style={{ color: PRIMARY }}>UMKM<span style={{ color: GOLD }}>ku</span></span>
+          <span className="text-xl font-bold" style={{ color: PRIMARY }}>UMKM<span style={{ color: GOLD }}>u</span></span>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium" style={{ color: TEXT_SEC }}>
             <Link href="#fitur" className="hover:text-[#0A2F73] transition-colors">Fitur</Link>
             <Link href="/pricing" className="hover:text-[#0A2F73] transition-colors">Harga</Link>
@@ -22,8 +22,8 @@ export default function LandingPage() {
             <Link href="#testimoni" className="hover:text-[#0A2F73] transition-colors">Kisah Sukses</Link>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/subscribe" className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90" style={{ background: GOLD, color: '#1a1a1a' }}>
-              Berlangganan Sekarang!
+            <Link href="/subscribe" className="hidden sm:inline-flex text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: GOLD, color: '#1a1a1a' }}>
+              Berlangganan
             </Link>
             <Link href="/onboarding" className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-opacity hover:opacity-90" style={{ background: PRIMARY }}>
               Mulai Gratis
@@ -86,7 +86,7 @@ export default function LandingPage() {
               {
                 icon: <ShoppingBag size={22} />,
                 title: 'Toko di Subdomain Sendiri',
-                desc: 'nama-brand.umkmku.com — toko kamu, data kamu, pelanggan kamu. Tidak lagi bergantung algoritma marketplace.',
+                desc: 'nama-brand.umkmu.site — toko kamu, data kamu, pelanggan kamu. Tidak lagi bergantung algoritma marketplace.',
               },
               {
                 icon: <MessageCircle size={22} />,
@@ -137,7 +137,7 @@ export default function LandingPage() {
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {[
-            { step: '01', title: 'Ceritakan bisnismu', desc: 'Ketik atau ceritakan brand, produk, dan visimu ke AI UMKMku.' },
+            { step: '01', title: 'Ceritakan bisnismu', desc: 'Ketik atau ceritakan brand, produk, dan visimu ke AI UMKMu.' },
             { step: '02', title: 'AI buat tokomu', desc: 'Dalam hitungan detik, toko dengan subdomain, produk, dan chatbot sudah siap.' },
             { step: '03', title: 'Mulai terima pesanan', desc: 'Share link toko, customer bisa langsung browse, chat, checkout, dan bayar.' },
           ].map((s) => (
@@ -302,7 +302,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-col md:flex-row justify-between gap-10">
             <div className="flex flex-col gap-3 max-w-xs">
-              <span className="text-xl font-bold text-white">UMKM<span style={{ color: GOLD }}>ku</span></span>
+              <span className="text-xl font-bold text-white">UMKM<span style={{ color: GOLD }}>u</span></span>
               <p className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
                 Platform web & marketplace builder untuk UMKM lokal Indonesia. Tokomu, datamu, pelangganmu.
               </p>
@@ -323,7 +323,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-10 pt-6 text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>
-            © 2025 UMKMku.com · Dibuat dengan ❤️ untuk UMKM Indonesia
+            © 2026 UMKMu.site · Dibuat dengan ❤️ untuk UMKM Indonesia
           </div>
         </div>
       </footer>
