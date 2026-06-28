@@ -14,7 +14,7 @@ const PLANS: Record<string, { id: string; name: string; price: number; features:
   business: {
     id: 'business',
     name: 'Business',
-    price: 399000,
+    price: 10000,
     features: ['AI Chatbot 1 juta token/bulan', '1.000 pesanan/bulan', 'Analitik penjualan', 'WhatsApp support'],
   },
   enterprise: {
@@ -34,7 +34,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
   const plan = PLANS[planKey]
   if (!plan) redirect('/subscribe')
 
-  const pricing = calculatePricingBreakdown(plan.price)
+  const pricing = calculatePricingBreakdown(plan.price, false) // QRIS manual, no gateway fee
 
   return (
     <div className="min-h-screen font-sans" style={{ background: SURFACE }}>
@@ -92,10 +92,6 @@ export default async function CheckoutPage({ searchParams }: Props) {
                 <span style={{ color: TEXT_SEC }}>PPN (12%)</span>
                 <span style={{ color: TEXT_SEC }}>{formatRupiah(pricing.ppn)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: TEXT_SEC }}>Biaya payment gateway (2,5%)</span>
-                <span style={{ color: TEXT_SEC }}>{formatRupiah(pricing.xenditFee)}</span>
-              </div>
               <div
                 className="flex justify-between pt-3 mt-1"
                 style={{ borderTop: `1px solid ${BORDER}` }}
@@ -107,7 +103,7 @@ export default async function CheckoutPage({ searchParams }: Props) {
               </div>
             </div>
             <p className="text-xs mt-3" style={{ color: TEXT_SEC }}>
-              Pembayaran diproses oleh Xendit. Mendukung VA, QRIS, kartu kredit, dan dompet digital.
+              Harga sudah termasuk PPN 12%. Tidak ada biaya tambahan untuk pembayaran QRIS.
             </p>
           </div>
 

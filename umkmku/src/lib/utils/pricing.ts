@@ -26,26 +26,13 @@ export interface PricingBreakdown {
  * calculatePricingBreakdown(100000)
  * => { subtotal: 100000, ppn: 12000, subtotalWithPpn: 112000, xenditFee: 2800, finalPrice: 114800 }
  */
-export function calculatePricingBreakdown(subtotal: number): PricingBreakdown {
-  // Calculate PPN (12% VAT) on subtotal
+export function calculatePricingBreakdown(subtotal: number, includeGatewayFee = true): PricingBreakdown {
   const ppn = Math.round(subtotal * 0.12)
-
-  // Subtotal after adding PPN
   const subtotalWithPpn = subtotal + ppn
-
-  // Calculate Xendit fee (2.5% on subtotal with PPN)
-  const xenditFee = Math.round(subtotalWithPpn * 0.025)
-
-  // Final price customer pays
+  const xenditFee = includeGatewayFee ? Math.round(subtotalWithPpn * 0.025) : 0
   const finalPrice = subtotalWithPpn + xenditFee
 
-  return {
-    subtotal,
-    ppn,
-    subtotalWithPpn,
-    xenditFee,
-    finalPrice,
-  }
+  return { subtotal, ppn, subtotalWithPpn, xenditFee, finalPrice }
 }
 
 /**
