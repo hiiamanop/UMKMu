@@ -18,6 +18,10 @@ async function send(phone: string, message: string) {
   } catch { /* notifikasi gagal tidak boleh gagalkan flow utama */ }
 }
 
+export async function sendWhatsAppMessage(phone: string, message: string) {
+  return send(phone, message)
+}
+
 // ── Merchant ────────────────────────────────────────────────────────────────
 
 export async function notifyMerchantNewOrder({ merchantWa, brandName, customerName, totalAmount, orderId }: {

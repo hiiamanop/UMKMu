@@ -28,9 +28,31 @@ export function CheckoutClient({ slug, tenant, initialName, initialWhatsapp, ini
   const [address, setAddress] = useState(initialAddress)
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [promoCode, setPromoCode] = useState('')
+  const [promoDiscount, setPromoDiscount] = useState(0)
+  const [promoError, setPromoError] = useState('')
+  const [promoLoading, setPromoLoading] = useState(false)
 
   const inputCls = 'w-full bg-[var(--color-secondary)] border border-black/15 px-4 py-3 text-body-md focus:outline-none focus:border-[var(--color-primary)] transition-colors'
   const labelCls = 'text-label-caps text-[10px] text-[var(--color-accent)]/40 block mb-2'
+
+  async function applyPromo() {
+    if (!promoCode.trim()) return
+    setPromoLoading(true)
+    setPromoError('')
+    setPromoDiscount(0)
+    const res = await fetch('/api/promo/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: promoCode, subtotal: totalPrice }),
+    })
+    const data = await res.json()
+    if (!res.ok) { setPromoError(data.error); }
+    else { setPromoDiscount(data.discount) }
+    setPromoLoading(false)
+  }
+
+  const discountedTotal = Math.max(0, totalPrice - promoDiscount)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -41,7 +63,7 @@ export function CheckoutClient({ slug, tenant, initialName, initialWhatsapp, ini
     }
     setError(null)
     startTransition(async () => {
-      const result = await createOrder(slug, items, name.trim(), whatsapp.trim(), address.trim())
+      const result = await createOrder(slug, items, name.trim(), whatsapp.trim(), address.trim(), promoDiscount > 0 ? promoCode : undefined, promoDiscount)
       if (!result) return
       if (result.error) { setError(result.error); return }
       if (result.orderId) {
@@ -159,15 +181,39 @@ export function CheckoutClient({ slug, tenant, initialName, initialWhatsapp, ini
                     <span className="text-[var(--color-accent)]/60">{items.reduce((s, i) => s + i.quantity, 0)} item</span>
                     <span>{fmt(totalPrice)}</span>
                   </div>
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between text-body-md text-green-600">
+                      <span>Diskon ({promoCode})</span>
+                      <span>-{fmt(promoDiscount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between text-body-md">
                     <span className="text-[var(--color-accent)]/60">Pengiriman</span>
                     <span className="text-[var(--color-accent)]/40 text-sm">Sesuai kurir</span>
                   </div>
                 </div>
 
+                {/* Promo code input */}
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex gap-2">
+                    <input
+                      value={promoCode}
+                      onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoDiscount(0); setPromoError('') }}
+                      placeholder="Kode promo (opsional)"
+                      className="flex-1 text-xs px-3 py-2 border border-black/10 bg-[var(--color-secondary)] focus:outline-none focus:border-[var(--color-primary)]"
+                    />
+                    <button type="button" onClick={applyPromo} disabled={promoLoading || !promoCode.trim()}
+                      className="text-xs px-3 py-2 bg-[var(--color-primary)] text-white disabled:opacity-40">
+                      {promoLoading ? '...' : 'Pakai'}
+                    </button>
+                  </div>
+                  {promoError && <p className="text-[11px] text-red-500 font-sans">{promoError}</p>}
+                  {promoDiscount > 0 && <p className="text-[11px] text-green-600 font-sans">✓ Hemat {fmt(promoDiscount)}!</p>}
+                </div>
+
                 <div className="border-t border-black/8 pt-4 mt-4 flex justify-between items-baseline">
                   <span className="text-headline-md italic">Total</span>
-                  <span className="text-headline-lg" style={{ color: 'var(--color-primary)' }}>{fmt(totalPrice)}</span>
+                  <span className="text-headline-lg" style={{ color: 'var(--color-primary)' }}>{fmt(discountedTotal)}</span>
                 </div>
 
                 {error && (
