@@ -6,10 +6,12 @@ import { createServiceClient } from '@/lib/supabase/server'
 
 const NAV = [
   { href: '/admin', label: '📊 Overview' },
+  { href: '/admin/invoices', label: '🧾 Invoice' },
   { href: '/admin/articles', label: '📝 Artikel' },
   { href: '/admin/merchants/ongoing', label: '✅ Ongoing' },
   { href: '/admin/merchants/leads', label: '🎯 Leads' },
   { href: '/admin/promos', label: '🎁 Kode Promo' },
+  { href: '/admin/settings', label: '⚙️ Pengaturan' },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
