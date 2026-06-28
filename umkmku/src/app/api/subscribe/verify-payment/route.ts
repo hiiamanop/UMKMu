@@ -104,17 +104,22 @@ export async function POST(req: NextRequest) {
 
   let verified = false
   let reason = 'Gagal memverifikasi'
+  const useGemini = process.env.AI_PROVIDER === 'gemini' || !process.env.OLLAMA_BASE_URL
 
   try {
-    const parsed = await checkWithOllama(base64, file.type, amount, ref, merchantName)
+    const parsed = useGemini
+      ? await checkWithGemini(base64, file.type, amount, ref, merchantName)
+      : await checkWithOllama(base64, file.type, amount, ref, merchantName)
     verified = parsed.valid === true
     reason = parsed.reason ?? reason
   } catch {
-    try {
-      const parsed = await checkWithGemini(base64, file.type, amount, ref, merchantName)
-      verified = parsed.valid === true
-      reason = parsed.reason ?? reason
-    } catch { /* fallback ke manual review */ }
+    if (!useGemini) {
+      try {
+        const parsed = await checkWithGemini(base64, file.type, amount, ref, merchantName)
+        verified = parsed.valid === true
+        reason = parsed.reason ?? reason
+      } catch { /* fallback ke manual review */ }
+    }
   }
 
   const planName = invoice.plan_id.charAt(0).toUpperCase() + invoice.plan_id.slice(1)
