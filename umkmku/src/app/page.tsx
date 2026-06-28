@@ -210,6 +210,7 @@ export default function LandingPage() {
               period: '7 hari',
               desc: 'Coba semua fitur tanpa risiko',
               cta: 'Mulai Gratis',
+              href: '/onboarding',
               popular: false,
               features: ['Toko di subdomain sendiri', 'AI onboarding', 'Chatbot AI (10.000 token)', 'Manajemen pesanan', 'Notifikasi WhatsApp'],
             },
@@ -219,6 +220,7 @@ export default function LandingPage() {
               period: '/bulan',
               desc: 'Untuk brand yang sudah aktif berjualan',
               cta: 'Pilih Business',
+              href: '/subscribe/checkout?plan=business',
               popular: true,
               features: ['Semua fitur Free', 'AI Chatbot 1.000.000 token', '1.000 pesanan/bulan', 'Verifikasi pembayaran AI', 'Analitik penjualan', 'Top-up pesanan Rp 10k/50 pesanan'],
             },
@@ -228,6 +230,7 @@ export default function LandingPage() {
               period: '/bulan',
               desc: 'Untuk brand dengan volume tinggi',
               cta: 'Pilih Enterprise',
+              href: '/subscribe/checkout?plan=enterprise',
               popular: false,
               features: ['Semua fitur Business', 'AI Chatbot 50 juta token', 'Pesanan tidak terbatas', 'Priority support', 'Custom chatbot persona'],
             },
@@ -259,7 +262,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <Link
-                href="/onboarding"
+                href={p.href}
                 className="mt-auto flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
                 style={{
                   background: p.popular ? GOLD : PRIMARY,

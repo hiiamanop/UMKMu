@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Libre_Caslon_Text, Hanken_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const libreCaslon = Libre_Caslon_Text({
@@ -50,7 +52,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`${libreCaslon.variable} ${hankenGrotesk.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
