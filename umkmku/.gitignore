@@ -33,6 +33,7 @@ yarn-error.log*
 # env files - ignore local, commit example
 .env*.local
 .env.local
+.env.*
 # DO NOT ignore .env.example
 
 # vercel
