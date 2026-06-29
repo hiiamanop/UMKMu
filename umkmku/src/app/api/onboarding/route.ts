@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { getAIModel, useGeminiDirect } from '@/lib/ai/provider'
 import { generateSlug, getOnboardingSystemPrompt } from '@/lib/ai/onboarding'
-import { geminiChat } from '@/lib/ai/gemini'
+import { deepseekChat } from '@/lib/ai/deepseek'
 import { createServiceClient } from '@/lib/supabase/server'
 import { validateCategoryData, type CategoryType } from '@/lib/categories'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -44,13 +44,13 @@ export async function POST(request: NextRequest) {
     const onboardingPrompt = getOnboardingSystemPrompt(category)
     let text: string
     if (useGeminiDirect()) {
-      text = await geminiChat([{ role: 'user', content: description }], onboardingPrompt)
+      text = await deepseekChat([{ role: 'user', content: description }], onboardingPrompt)
     } else {
       try {
         const result = await generateText({ model: getAIModel(), system: onboardingPrompt, prompt: description })
         text = result.text
       } catch {
-        text = await geminiChat([{ role: 'user', content: description }], onboardingPrompt)
+        text = await deepseekChat([{ role: 'user', content: description }], onboardingPrompt)
       }
     }
 
