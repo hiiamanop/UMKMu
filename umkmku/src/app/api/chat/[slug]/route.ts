@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { buildChatbotSystemPrompt } from '@/lib/ai/chatbot'
 import { createServiceClient } from '@/lib/supabase/server'
-import { geminiChat } from '@/lib/ai/gemini'
+import { deepseekChat } from '@/lib/ai/deepseek'
 
 const MAX_MESSAGES = 10
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
@@ -136,7 +136,7 @@ export async function POST(
 
   // Fallback: Gemini 2.0 Flash
   try {
-    const text = await geminiChat(messages, systemPrompt)
+    const text = await deepseekChat(messages, systemPrompt)
     await incrementTokens(inputTokens + estimateTokens(text))
     const stream = new ReadableStream({
       start(controller) { controller.enqueue(encoder.encode(text)); controller.close() },
