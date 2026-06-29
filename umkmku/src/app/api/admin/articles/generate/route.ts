@@ -56,9 +56,9 @@ Balas HANYA dalam format JSON berikut (tanpa markdown, tanpa kode block):
 
   const provider = process.env.AI_PROVIDER ?? 'ollama'
 
-  if (provider === 'gemini') {
-    const { geminiChat } = await import('@/lib/ai/gemini')
-    const result = await geminiChat([{ role: 'user', content: prompt }])
+  if (provider === 'deepseek' || provider === 'gemini') {
+    const { deepseekChat } = await import('@/lib/ai/deepseek')
+    const result = await deepseekChat([{ role: 'user', content: prompt }])
     return JSON.parse(result.replace(/```json\n?|\n?```/g, '').trim())
   }
 

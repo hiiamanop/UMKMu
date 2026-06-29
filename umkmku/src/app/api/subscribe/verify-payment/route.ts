@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { geminiVision } from '@/lib/ai/gemini'
+import { deepseekVision } from '@/lib/ai/deepseek'
 import { sendTelegramMessage } from '@/lib/notifications/telegram'
 import { sendPaymentReceived, sendPaymentRejected } from '@/lib/email/resend'
 
@@ -34,26 +34,8 @@ Jika ada poin WAJIB yang tidak terpenuhi → valid = false.
 Jawab hanya JSON: {"valid": true/false, "ref_found": true/false, "reason": "alasan singkat dalam bahasa Indonesia"}`
 }
 
-async function checkWithOllama(base64: string, mimeType: string, amount: number, ref: string, merchantName: string | null) {
-  const ollamaUrl = process.env.OLLAMA_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
-  const model = process.env.OLLAMA_MODEL ?? 'gemma4:12b'
-  const res = await fetch(`${ollamaUrl}/api/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model, stream: false, think: false,
-      messages: [{ role: 'user', content: buildPrompt(amount, ref, merchantName), images: [base64] }],
-    }),
-  })
-  if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
-  const data = await res.json()
-  const match = (data.message?.content ?? '').match(/\{[\s\S]*\}/)
-  if (!match) throw new Error('No JSON')
-  return JSON.parse(match[0]) as { valid: boolean; reason: string }
-}
-
-async function checkWithGemini(base64: string, mimeType: string, amount: number, ref: string, merchantName: string | null) {
-  const result = await geminiVision(buildPrompt(amount, ref, merchantName), base64, mimeType as 'image/jpeg' | 'image/png' | 'image/webp')
+async function checkWithDeepSeek(base64: string, mimeType: string, amount: number, ref: string, merchantName: string | null) {
+  const result = await deepseekVision(buildPrompt(amount, ref, merchantName), base64, mimeType as 'image/jpeg' | 'image/png' | 'image/webp')
   const match = result.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('No JSON')
   return JSON.parse(match[0]) as { valid: boolean; reason: string }
@@ -104,23 +86,12 @@ export async function POST(req: NextRequest) {
 
   let verified = false
   let reason = 'Gagal memverifikasi'
-  const useGemini = process.env.AI_PROVIDER === 'gemini' || !process.env.OLLAMA_BASE_URL
 
   try {
-    const parsed = useGemini
-      ? await checkWithGemini(base64, file.type, amount, ref, merchantName)
-      : await checkWithOllama(base64, file.type, amount, ref, merchantName)
+    const parsed = await checkWithDeepSeek(base64, file.type, amount, ref, merchantName)
     verified = parsed.valid === true
     reason = parsed.reason ?? reason
-  } catch {
-    if (!useGemini) {
-      try {
-        const parsed = await checkWithGemini(base64, file.type, amount, ref, merchantName)
-        verified = parsed.valid === true
-        reason = parsed.reason ?? reason
-      } catch { /* fallback ke manual review */ }
-    }
-  }
+  } catch { /* fallback ke manual review */ }
 
   const planName = invoice.plan_id.charAt(0).toUpperCase() + invoice.plan_id.slice(1)
 

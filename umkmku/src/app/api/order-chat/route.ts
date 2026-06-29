@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { geminiChat, geminiVision } from '@/lib/ai/gemini'
+import { deepseekChat, deepseekVision } from '@/lib/ai/deepseek'
 import { notifyMerchantPaymentSubmitted } from '@/lib/notifications/whatsapp'
 
 // GET /api/order-chat?orderId=xxx — load messages
@@ -181,7 +181,7 @@ Instruksi:
 
   // Fallback: Gemini 2.0 Flash
   try {
-    return await geminiChat([{ role: 'user', content: prompt }])
+    return await deepseekChat([{ role: 'user', content: prompt }])
   } catch {}
   return fallbackReply(order.status)
 }
@@ -292,7 +292,7 @@ Balas HANYA JSON ini, tanpa teks lain sebelum atau sesudah:
   // Fallback: Gemini 2.5 Flash + thinking (vision)
   if (imageBase64) {
     try {
-      const raw = await geminiVision(validationPrompt, imageBase64)
+      const raw = await deepseekVision(validationPrompt, imageBase64)
       const match = raw.match(/\{[\s\S]*\}/)
       if (match) {
         const parsed = JSON.parse(match[0])
