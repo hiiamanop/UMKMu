@@ -27,25 +27,22 @@ export async function deepseekChat(
   return data.choices?.[0]?.message?.content ?? ''
 }
 
+// DeepSeek API belum support vision — pakai Gemini 2.0 Flash (free tier)
 export async function deepseekVision(prompt: string, imageBase64: string, mimeType = 'image/jpeg'): Promise<string> {
-  const res = await fetch(DEEPSEEK_BASE, {
-    method: 'POST',
-    headers: headers(),
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
-          { type: 'text', text: prompt },
-        ],
-      }],
-    }),
-  })
-  if (!res.ok) {
-    const err = await res.text()
-    throw new Error(`DeepSeek vision error: ${res.status} ${err}`)
-  }
+  const key = process.env.GEMINI_API_KEY
+  if (!key) throw new Error('GEMINI_API_KEY not set')
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: mimeType, data: imageBase64 } }] }],
+      }),
+    }
+  )
+  if (!res.ok) throw new Error(`Gemini vision error: ${res.status}`)
   const data = await res.json()
-  return data.choices?.[0]?.message?.content ?? ''
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 }
