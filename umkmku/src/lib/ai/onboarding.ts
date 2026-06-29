@@ -36,69 +36,50 @@ export function generateSlug(brandName: string): string {
  * @returns System prompt string
  */
 export function getOnboardingSystemPrompt(category: CategoryType): string {
-  const basePrompt = `Kamu adalah asisten onboarding UMKMku.com untuk brand ${category} lokal Indonesia.
-Tugasmu: ekstrak informasi bisnis dari cerita merchant dan kembalikan sebagai JSON yang valid.
-
-Aturan umum:
-- Jika warna tidak disebutkan, pilih warna yang cocok untuk brand ${category}
-- primary_color: warna utama brand
-- secondary_color: warna background atau pelengkap
-- accent_color: warna highlight atau CTA
-- Semua warna dalam format hex (#rrggbb)
-- Jika harga tidak disebutkan, set null
-- chatbot_persona: deskripsi kepribadian advisor untuk brand ini (1-2 kalimat)
-- Jika Instagram tidak disebutkan, set null
-- Jika WhatsApp tidak disebutkan, set null`
-
   const categoryRules = getCategoryOnboardingRules(category)
 
-  return `${basePrompt}
+  return `Kamu adalah asisten onboarding UMKMku.com untuk brand ${category} lokal Indonesia.
+Tugasmu: ekstrak informasi bisnis dari cerita merchant dan kembalikan JSON dengan struktur PERSIS seperti di bawah.
 
-${categoryRules}
+OUTPUT JSON (wajib semua field):
+{
+  "brand_name": "nama brand persis seperti disebutkan merchant",
+  "tagline": "slogan singkat brand, atau null jika tidak ada",
+  "description": "deskripsi brand 1-2 kalimat",
+  "primary_color": "#rrggbb — warna utama brand",
+  "secondary_color": "#rrggbb — warna background/pelengkap",
+  "accent_color": "#rrggbb — warna highlight/CTA",
+  "whatsapp_number": "nomor WA format 628xxx, atau null",
+  "instagram_url": "URL Instagram, atau null",
+  "chatbot_persona": "kepribadian AI advisor toko ini, 1-2 kalimat",
+  "products": [ ${categoryRules} ]
+}
 
-Jawab HANYA dengan JSON, tidak ada teks lain.`
+Aturan warna:
+- Gunakan warna PERSIS yang disebutkan merchant jika ada (format hex #rrggbb)
+- Jika tidak disebutkan, pilih warna yang sesuai karakter brand ${category}
+
+Aturan WhatsApp: format 628xxx (ganti 08 dengan 628), atau null jika tidak disebutkan.
+
+Jawab HANYA dengan JSON valid, tidak ada teks lain sebelum atau sesudah.`
 }
 
 function getCategoryOnboardingRules(category: CategoryType): string {
   switch (category) {
     case 'skincare':
-      return `Aturan khusus skincare:
-- Untuk setiap produk, extract: name, description, price
-- Extract juga: skin_types (array dari: oily, combination, dry, sensitive, all)
-- Extract: concerns (array dari: acne, brightening, anti-aging, hydrating, pores, soothing, firming)
-- Extract: ingredients (array dari nama ingredients)
-- Extract: usage_step (dari: cleanser, toner, serum, moisturizer, sunscreen, treatment, mask)`
+      return `{ "name": "...", "description": "...", "price": 0 atau null, "skin_types": ["oily"|"combination"|"dry"|"sensitive"|"all"], "concerns": ["acne"|"brightening"|"anti-aging"|"hydrating"|"pores"|"soothing"|"firming"], "ingredients": ["..."], "usage_step": "cleanser"|"toner"|"serum"|"moisturizer"|"sunscreen"|"treatment"|"mask" }`
 
     case 'parfum':
-      return `Aturan khusus parfum:
-- Untuk setiap produk, extract: name, description, price
-- Extract juga: fragrance_family (array dari: floral, woody, fresh, oriental, chypre)
-- Extract: notes_top (array dari top notes)
-- Extract: notes_middle (array dari middle notes)
-- Extract: notes_base (array dari base notes)
-- Extract: size (dari: 30, 50, 100, 200)
-- Extract: longevity (dari: light, moderate, long-lasting)`
+      return `{ "name": "...", "description": "...", "price": 0 atau null, "fragrance_family": ["floral"|"woody"|"fresh"|"oriental"|"chypre"], "notes_top": ["..."], "notes_middle": ["..."], "notes_base": ["..."], "size": 30|50|100|200, "longevity": "light"|"moderate"|"long-lasting" }`
 
     case 'fashion':
-      return `Aturan khusus fashion:
-- Untuk setiap produk, extract: name, description, price
-- Extract juga: sizes (array dari available sizes, contoh: ["S", "M", "L", "XL"])
-- Extract: colors (array dari warna tersedia)
-- Extract: materials (array dari material)
-- Extract: fit (HARUS salah satu dari: slim, regular, relaxed, oversized)
-- Extract: style (array dari style tags, contoh: ["casual", "sporty"])`
+      return `{ "name": "...", "description": "...", "price": 0 atau null, "sizes": ["S","M","L","XL"], "colors": ["..."], "materials": ["..."], "fit": "slim"|"regular"|"relaxed"|"oversized", "style": ["casual"|"sporty"|"formal"|"streetwear"] }`
 
     case 'fdb':
-      return `Aturan khusus F&B:
-- Untuk setiap produk, extract: name, description, price
-- Extract juga: ingredients (array dari nama ingredients)
-- Extract: allergens (array dari nama allergen, boleh apa saja)
-- Extract: preparation_time (NUMBER dalam menit, contoh: 30 untuk "30 menit")
-- Extract: servings (NUMBER jumlah porsi)
-- Extract: dietary (array dari: vegan, vegetarian, gluten-free, halal)`
+      return `{ "name": "...", "description": "...", "price": 0 atau null, "ingredients": ["..."], "allergens": ["..."], "preparation_time": 30, "servings": 1, "dietary": ["vegan"|"vegetarian"|"gluten-free"|"halal"] }`
 
     default:
-      return ''
+      return `{ "name": "...", "description": "...", "price": 0 atau null }`
   }
 }
 
