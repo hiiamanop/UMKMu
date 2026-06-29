@@ -9,12 +9,22 @@ function refCode(invoiceId: string) {
   return invoiceId.replace(/-/g, '').slice(-6).toUpperCase()
 }
 
-function buildPrompt(amount: number, refCode: string, merchantName: string | null) {
+function buildPrompt(amount: number, refCode: string, merchantName: string | null, invoiceCreatedAt: Date) {
   const merchantCheck = merchantName
     ? `4. Apakah nama penerima mengandung "${merchantName.slice(0, 25)}"?\n   (Aplikasi sering memotong nama merchant menjadi 25 karakter pertama — cocokkan hanya bagian itu)`
     : ''
 
+  const invoiceTime = invoiceCreatedAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
+  const deadlineTime = new Date(invoiceCreatedAt.getTime() + 30 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
+
   return `Ini adalah bukti pembayaran QRIS. Verifikasi hal berikut:
+
+KONTEKS WAKTU:
+- Invoice dibuat: ${invoiceTime} WIB
+- Batas bayar: ${deadlineTime} WIB
+- Pembayaran harus dilakukan SETELAH invoice dibuat dan SEBELUM batas waktu.
+  Jika waktu di struk jelas-jelas lebih awal dari waktu invoice (berarti struk lama/daur ulang) → valid = false.
+  Jika waktu tidak terbaca atau tidak tampil di struk → abaikan poin ini.
 
 WAJIB (semua harus terpenuhi):
 1. Apakah ini screenshot/foto pembayaran QRIS yang ASLI? Ciri editan: font tidak konsisten, pikselasi aneh di area nominal, angka terlihat ditempel, background tidak natural.
@@ -26,15 +36,13 @@ PENGUAT (opsional, tingkatkan keyakinan jika ada):
 - Apakah kode referensi "${refCode}" tertera di kolom catatan/berita transfer?
   (Beberapa e-wallet tidak memiliki kolom ini, jadi tidak ada bukan berarti tidak valid)
 
-Jangan mempertanyakan tahun transaksi — sistem ini beroperasi di tahun 2026.
-
 Jika semua poin WAJIB terpenuhi → valid = true, meski kode referensi tidak ada.
 Jika ada poin WAJIB yang tidak terpenuhi → valid = false.
 
 Jawab hanya JSON: {"valid": true/false, "ref_found": true/false, "reason": "alasan singkat dalam bahasa Indonesia"}`
 }
 
-async function checkWithOllama(base64: string, amount: number, ref: string, merchantName: string | null) {
+async function checkWithOllama(base64: string, amount: number, ref: string, merchantName: string | null, invoiceCreatedAt: Date) {
   const ollamaUrl = (process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434/v1').replace('/v1', '')
   const model = process.env.OLLAMA_MODEL ?? 'gemma4:12b'
   const res = await fetch(`${ollamaUrl}/api/chat`, {
@@ -42,7 +50,7 @@ async function checkWithOllama(base64: string, amount: number, ref: string, merc
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model, stream: false, think: false,
-      messages: [{ role: 'user', content: buildPrompt(amount, ref, merchantName), images: [base64] }],
+      messages: [{ role: 'user', content: buildPrompt(amount, ref, merchantName, invoiceCreatedAt), images: [base64] }],
     }),
   })
   if (!res.ok) throw new Error(`Ollama error: ${res.status}`)
@@ -52,8 +60,8 @@ async function checkWithOllama(base64: string, amount: number, ref: string, merc
   return JSON.parse(match[0]) as { valid: boolean; reason: string }
 }
 
-async function checkWithGemini(base64: string, mimeType: string, amount: number, ref: string, merchantName: string | null) {
-  const result = await deepseekVision(buildPrompt(amount, ref, merchantName), base64, mimeType as 'image/jpeg' | 'image/png' | 'image/webp')
+async function checkWithGemini(base64: string, mimeType: string, amount: number, ref: string, merchantName: string | null, invoiceCreatedAt: Date) {
+  const result = await deepseekVision(buildPrompt(amount, ref, merchantName, invoiceCreatedAt), base64, mimeType as 'image/jpeg' | 'image/png' | 'image/webp')
   const match = result.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('No JSON')
   return JSON.parse(match[0]) as { valid: boolean; reason: string }
@@ -78,8 +86,11 @@ export async function POST(req: NextRequest) {
   if (!invoice) return NextResponse.json({ error: 'Invoice tidak ditemukan' }, { status: 404 })
   if (invoice.status === 'paid') return NextResponse.json({ verified: true, message: 'Sudah terverifikasi' })
 
-  const deadline = new Date(new Date(invoice.created_at).getTime() + 30 * 60 * 1000)
-  if (new Date() > deadline) {
+  const invoiceCreatedAt = new Date(invoice.created_at)
+  const deadline = new Date(invoiceCreatedAt.getTime() + 30 * 60 * 1000)
+  const now = new Date()
+  console.log('[verify-payment] invoice created:', invoiceCreatedAt.toISOString(), 'deadline:', deadline.toISOString(), 'now:', now.toISOString(), 'expired:', now > deadline)
+  if (now > deadline) {
     return NextResponse.json({ verified: false, expired: true, message: 'Batas waktu upload bukti bayar (30 menit) telah habis. Silakan buat invoice baru.' }, { status: 400 })
   }
 
@@ -108,15 +119,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const parsed = useOllama
-      ? await checkWithOllama(base64, amount, ref, merchantName)
-      : await checkWithGemini(base64, file.type, amount, ref, merchantName)
+      ? await checkWithOllama(base64, amount, ref, merchantName, invoiceCreatedAt)
+      : await checkWithGemini(base64, file.type, amount, ref, merchantName, invoiceCreatedAt)
     verified = parsed.valid === true
     reason = parsed.reason ?? reason
   } catch (err) {
     console.error('[verify-payment] vision error:', err)
     if (useOllama) {
       try {
-        const parsed = await checkWithGemini(base64, file.type, amount, ref, merchantName)
+        const parsed = await checkWithGemini(base64, file.type, amount, ref, merchantName, invoiceCreatedAt)
         verified = parsed.valid === true
         reason = parsed.reason ?? reason
       } catch (err2) {

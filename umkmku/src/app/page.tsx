@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, Check, TrendingUp, MessageCircle, Bell, ShoppingBag, Star, ChevronRight } from 'lucide-react'
+import { LandingChat } from '@/components/landing/LandingChat'
 
 const PRIMARY = '#0A2F73'
 const GOLD = '#F4B400'
@@ -331,6 +332,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
+      <LandingChat />
     </div>
   )
 }
