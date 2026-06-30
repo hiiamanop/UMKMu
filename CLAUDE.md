@@ -1,7 +1,7 @@
 # UMKMku.com — Project Knowledge Base
 
 > Baca ini di awal setiap session. Ini adalah satu-satunya source of truth untuk keputusan arsitektur, produk, dan teknis.
-> **Terakhir diperbarui:** 2026-06-30 (full codebase scan)
+> **Terakhir diperbarui:** 2026-06-30 (sesi 5 — logo image + build fix)
 
 ---
 
@@ -388,7 +388,7 @@ Platform dianggap siap validasi jika:
 
 | Area | Status | Catatan |
 |------|--------|---------|
-| Build Vercel | ✅ Fixed | TypeScript cast error route.ts:78 |
+| Build Vercel | ✅ Fixed | getUserByEmail → listUsers (sesi 5); cast error route.ts:78 (sesi 1) |
 | Landing page | ✅ Done | Hero, pricing, testimonials, CTA |
 | Subscription system | ✅ Done | Plans, invoices, top-up, cron suspend |
 | Merchant dashboard | ✅ Done | Full CRUD produk, orders, appearance, chatbot |
@@ -402,6 +402,7 @@ Platform dianggap siap validasi jika:
 | **Security** | ✅ Hardened | 8 CRITICAL + 8 HIGH + 6 MEDIUM fixed — 18 tiket |
 | **SEO** | ✅ Done | Dynamic metadata, sitemap, robots, JSON-LD |
 | **Legal pages** | ✅ Draft | `/privacy` + `/terms` — perlu review lawyer |
+| **Logo** | ✅ Done | `logo.png` di semua 18 halaman — navbar, footer, admin, login |
 | OG image | ⚠️ Missing | `/public/og-image.png` belum ada |
 | Public blog | 📋 Next | `/blog/[slug]` belum ada — artikel tidak bisa diindex |
 
@@ -418,3 +419,11 @@ Platform dianggap siap validasi jika:
 7. **Subscription:** Free Trial (10k token, 7 hari) / Business (Rp 399k, 1M token, 1K txn) / Enterprise (Rp 599k, 50M token cap)
 8. **Suspend:** Trial habis = suspend total, bukan partial lock
 9. **Nama:** UMKMku.com — final
+
+---
+
+## Gotcha Teknis (jangan diulang)
+
+- `supabase.auth.admin.getUserByEmail()` **tidak exist** di Supabase JS v2 — gunakan `listUsers().find()` atau query DB
+- Logo dalam `flex-col` parent perlu `self-start` class agar tidak di-stretch horizontal
+- Chat AI **tidak boleh** lewat Vercel AI SDK + Ollama — pakai `geminiChat()` dari `lib/ai/gemini.ts` langsung
