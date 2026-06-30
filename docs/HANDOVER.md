@@ -4,6 +4,31 @@
 
 ---
 
+## Session: 2026-06-30 (sesi 5)
+
+**Status:** ✅ Logo image + build fix
+
+### Dikerjakan
+
+- **[UI]** Semua logo teks UMKMu (18 file) diganti dengan `<img src="/logo.png">` — navbar, footer, admin sidebar, login pages, freelancer, subscribe, onboarding
+- **[UI]** Footer landing page & insight: hapus `brightness-0 invert` — logo tampil warna asli (bukan putih)
+- **[FIX]** Logo gepeng di footer: tambah `self-start` pada image di parent `flex-col` (align-items: stretch default menyebabkan stretch horizontal)
+- **[BUG FIX]** Build error Vercel: `getUserByEmail` tidak exist di Supabase Admin API → revert ke `listUsers().find()` di `api/onboarding/check-email/route.ts` (kesalahan dari security agent sesi sebelumnya)
+- **[FIX]** Semua typo "UMKMku" → "UMKMu" di subscribe pages dan onboarding component
+
+### Gotcha Teknis
+- `supabase.auth.admin.getUserByEmail()` **TIDAK ADA** di Supabase JS v2. Gunakan `listUsers()` lalu `.find()` by email, atau query DB via `user_profiles`
+- Logo di dalam `flex-col` parent perlu `self-start` atau parent perlu `items-start` agar tidak di-stretch ke lebar container
+- `brightness-0 invert` filter membuat logo jadi putih total — cocok hanya jika logo punya transparent background dengan warna tunggal
+
+### ⚠️ Yang Masih Perlu Dilakukan
+- OG image (`public/og-image.png`) belum ada — perlu dibuat (1200×630px)
+- Submit sitemap ke Google Search Console: `https://umkmu.site/sitemap.xml`
+- Public blog page `/blog/[slug]` — artikel ada di admin tapi belum bisa diindex Google
+- Legal pages perlu review lawyer sebelum berlaku resmi
+
+---
+
 ## Session: 2026-06-30 (sesi 4)
 
 **Status:** ✅ Security hardening + SEO + Legal pages
