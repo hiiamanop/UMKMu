@@ -1,6 +1,18 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ArrowRight, Check, TrendingUp, MessageCircle, Bell, ShoppingBag, Star, ChevronRight } from 'lucide-react'
 import { LandingChat } from '@/components/landing/LandingChat'
+
+export const metadata: Metadata = {
+  title: 'UMKMu — Buat Toko Online UMKM dalam 60 Detik',
+  description: 'Platform toko online terbaik untuk UMKM Indonesia. Subdomain sendiri, AI chatbot penjualan, checkout QRIS, dan manajemen pesanan. Coba gratis 7 hari.',
+  openGraph: {
+    title: 'UMKMu — Buat Toko Online UMKM dalam 60 Detik',
+    description: 'Platform toko online terbaik untuk UMKM Indonesia. Subdomain sendiri, AI chatbot penjualan, checkout QRIS, dan manajemen pesanan.',
+    url: 'https://umkmu.site',
+    type: 'website',
+  },
+}
 
 const PRIMARY = '#0A2F73'
 const GOLD = '#F4B400'
@@ -15,13 +27,13 @@ export default function LandingPage() {
       {/* Navbar */}
       <nav style={{ borderBottom: `1px solid ${BORDER}` }} className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between h-16">
-          <span className="text-xl font-bold" style={{ color: PRIMARY }}>UMKM<span style={{ color: GOLD }}>u</span></span>
+          <img src="/logo.png" alt="UMKMu" className="h-8 w-auto" />
           <div className="hidden md:flex items-center gap-8 text-sm font-medium" style={{ color: TEXT_SEC }}>
             <Link href="#fitur" className="hover:text-[#0A2F73] transition-colors">Fitur</Link>
-            <Link href="/templates" className="hover:text-[#0A2F73] transition-colors">Templates</Link>
+            <Link href="#testimoni" className="hover:text-[#0A2F73] transition-colors">Kisah Sukses</Link>
             <Link href="/pricing" className="hover:text-[#0A2F73] transition-colors">Harga</Link>
             <Link href="/insight" className="hover:text-[#0A2F73] transition-colors">Insight</Link>
-            <Link href="#testimoni" className="hover:text-[#0A2F73] transition-colors">Kisah Sukses</Link>
+            <Link href="/templates" className="hover:text-[#0A2F73] transition-colors">Templates</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/subscribe" className="hidden sm:inline-flex text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: GOLD, color: '#1a1a1a' }}>
@@ -313,18 +325,23 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-              {[
-                { title: 'Produk', links: ['Fitur', 'Harga', 'Onboarding AI'] },
-                { title: 'Dukungan', links: ['Panduan', 'WhatsApp Support', 'Status'] },
-                { title: 'Legal', links: ['Privasi', 'Syarat & Ketentuan'] },
-              ].map((col) => (
-                <div key={col.title} className="flex flex-col gap-3">
-                  <div className="text-sm font-semibold text-white">{col.title}</div>
-                  {col.links.map((l) => (
-                    <span key={l} className="text-sm cursor-pointer" style={{ color: 'rgba(255,255,255,0.5)' }}>{l}</span>
-                  ))}
-                </div>
-              ))}
+              <div className="flex flex-col gap-3">
+                <div className="text-sm font-semibold text-white">Produk</div>
+                <Link href="#fitur" className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Fitur</Link>
+                <Link href="/pricing" className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Harga</Link>
+                <Link href="/onboarding" className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Onboarding AI</Link>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="text-sm font-semibold text-white">Ekosistem</div>
+                <Link href="/freelancer/register" className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Jadi Template Partner</Link>
+                <Link href="/templates" className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Gallery Template</Link>
+                <Link href="/insight" className="text-sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Insight UMKM</Link>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div className="text-sm font-semibold text-white">Legal</div>
+                <Link href="/privacy" className="text-sm hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.5)' }}>Privasi</Link>
+                <Link href="/terms" className="text-sm hover:text-white transition-colors" style={{ color: 'rgba(255,255,255,0.5)' }}>Syarat &amp; Ketentuan</Link>
+              </div>
             </div>
           </div>
           <div className="mt-10 pt-6 text-sm" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }}>

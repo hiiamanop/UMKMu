@@ -24,6 +24,18 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/admin/login'
         return NextResponse.redirect(url)
       }
+      // Role check — hanya super_admin yang boleh akses /admin/*
+      const serviceDb = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        { cookies: { getAll: () => [], setAll: () => {} } }
+      )
+      const { data: profile } = await serviceDb.from('user_profiles').select('role').eq('id', user.id).single()
+      if (profile?.role !== 'super_admin') {
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin/login'
+        return NextResponse.redirect(url)
+      }
     }
 
     const requestHeaders = new Headers(request.headers)

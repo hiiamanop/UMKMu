@@ -13,7 +13,7 @@ const HERO_ARTICLE = {
   category: 'Branding',
   title: 'Cara Membangun Brand Lokal yang Kuat di Era Digital',
   excerpt: 'Banyak UMKM gagal bukan karena produknya jelek, tapi karena tidak punya identitas brand yang jelas. Pelajari 5 langkah membangun brand yang diingat pelanggan — bahkan tanpa budget besar.',
-  author: 'Tim UMKMku',
+  author: 'Tim UMKMu',
   date: '25 Juni 2026',
   readTime: '7 menit',
   image: null,
@@ -25,7 +25,7 @@ const ARTICLES = [
     category: 'Strategi',
     title: 'Kenapa UMKM Harus Punya Toko Online Sendiri, Bukan Cuma Jualan di Marketplace',
     excerpt: 'Marketplace memberimu pembeli, tapi tidak memberimu pelanggan. Ini perbedaan paling krusial yang sering diabaikan.',
-    author: 'Tim UMKMku',
+    author: 'Tim UMKMu',
     date: '24 Juni 2026',
     readTime: '5 menit',
   },
@@ -34,7 +34,7 @@ const ARTICLES = [
     category: 'Teknologi',
     title: 'AI Chatbot Bisa Jualan 24 Jam — Ini Cara Kerjanya untuk UMKM',
     excerpt: 'Customer datang jam 2 pagi, tidak ada yang bisa jawab. AI chatbot bisa. Pelajari bagaimana teknologi ini membantu UMKM meningkatkan konversi.',
-    author: 'Tim UMKMku',
+    author: 'Tim UMKMu',
     date: '23 Juni 2026',
     readTime: '6 menit',
   },
@@ -43,7 +43,7 @@ const ARTICLES = [
     category: 'Marketing',
     title: '7 Tips Foto Produk yang Menarik Hanya dengan HP — Tanpa Studio',
     excerpt: 'Foto produk jelek sama dengan kehilangan 60% calon pembeli. Padahal dengan teknik yang tepat, HP biasa bisa hasilkan foto sekualitas studio.',
-    author: 'Tim UMKMku',
+    author: 'Tim UMKMu',
     date: '22 Juni 2026',
     readTime: '4 menit',
   },
@@ -52,7 +52,7 @@ const ARTICLES = [
     category: 'Keuangan',
     title: 'Cara Menghitung Harga Jual yang Menguntungkan — Bukan Sekadar Modal + Untung',
     excerpt: 'Banyak UMKM yang rajin jualan tapi tidak pernah untung. Kesalahannya ada di cara menghitung harga. Ini formula yang benar.',
-    author: 'Tim UMKMku',
+    author: 'Tim UMKMu',
     date: '21 Juni 2026',
     readTime: '8 menit',
   },
@@ -61,7 +61,7 @@ const ARTICLES = [
     category: 'Strategi',
     title: 'Mengubah Pembeli Pertama Jadi Pelanggan Setia: Strategi Repeat Buyer untuk UMKM',
     excerpt: 'Biaya mendapatkan pelanggan baru 5x lebih mahal dari mempertahankan yang lama. Ini cara praktisnya.',
-    author: 'Tim UMKMku',
+    author: 'Tim UMKMu',
     date: '20 Juni 2026',
     readTime: '6 menit',
   },
@@ -70,7 +70,7 @@ const ARTICLES = [
     category: 'Marketing',
     title: 'WhatsApp sebagai Senjata Penjualan UMKM: Lebih dari Sekadar Chat',
     excerpt: 'WhatsApp bukan hanya alat komunikasi — ini bisa jadi mesin penjualan otomatis jika kamu tahu caranya.',
-    author: 'Tim UMKMku',
+    author: 'Tim UMKMu',
     date: '19 Juni 2026',
     readTime: '5 menit',
   },
@@ -111,7 +111,7 @@ export default function InsightPage() {
             Kembali
           </Link>
           <Link href="/" className="text-xl font-bold" style={{ color: PRIMARY }}>
-            UMKM<span style={{ color: GOLD }}>ku</span>
+            UMKM<span style={{ color: GOLD }}>u</span>
           </Link>
           <Link
             href="/onboarding"
@@ -127,7 +127,7 @@ export default function InsightPage() {
       <div style={{ background: PRIMARY }} className="py-12">
         <div className="mx-auto max-w-6xl px-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-4" style={{ background: `${GOLD}30`, color: GOLD }}>
-            UMKMku Insight
+            UMKMu Insight
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white">Artikel & Tips untuk UMKM</h1>
           <p className="mt-3 text-base" style={{ color: 'rgba(255,255,255,0.65)' }}>
@@ -269,10 +269,10 @@ export default function InsightPage() {
       <footer style={{ background: '#06183D' }} className="py-8 mt-12">
         <div className="mx-auto max-w-6xl px-6 flex items-center justify-between">
           <Link href="/" className="text-lg font-bold text-white">
-            UMKM<span style={{ color: GOLD }}>ku</span>
+            UMKM<span style={{ color: GOLD }}>u</span>
           </Link>
           <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            © 2025 UMKMku.com
+            © 2026 UMKMu.site
           </p>
         </div>
       </footer>

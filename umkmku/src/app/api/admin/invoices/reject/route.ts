@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendTelegramMessage } from '@/lib/notifications/telegram'
 import { sendPaymentRejected } from '@/lib/email/resend'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function POST(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { invoiceId, reason } = await req.json()
   if (!invoiceId) return NextResponse.json({ error: 'invoiceId wajib' }, { status: 400 })
   if (!reason?.trim()) return NextResponse.json({ error: 'Alasan penolakan wajib diisi' }, { status: 400 })

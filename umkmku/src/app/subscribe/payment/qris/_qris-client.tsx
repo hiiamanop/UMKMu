@@ -100,8 +100,8 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
     <div className="min-h-screen font-sans" style={{ background: SURFACE }}>
       <nav style={{ borderBottom: `1px solid ${BORDER}`, background: 'white' }} className="sticky top-0 z-50">
         <div className="mx-auto max-w-2xl px-6 flex items-center h-16">
-          <Link href="/" className="text-xl font-bold" style={{ color: PRIMARY }}>
-            UMKM<span style={{ color: GOLD }}>u</span>
+          <Link href="/">
+            <img src="/logo.png" alt="UMKMu" className="h-8 w-auto" />
           </Link>
         </div>
       </nav>
@@ -286,8 +286,9 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
               )}
 
               {(status === 'rejected' || status === 'error') && (
-                <div className="mt-4 p-3 rounded-xl text-sm text-red-700 bg-red-50 border border-red-100"
-                  dangerouslySetInnerHTML={{ __html: message }} />
+                <div className="mt-4 p-3 rounded-xl text-sm text-red-700 bg-red-50 border border-red-100">
+                  {message}
+                </div>
               )}
 
               <button onClick={handleVerify} disabled={!file || status === 'uploading'}
