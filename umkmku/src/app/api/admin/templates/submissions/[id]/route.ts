@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { scanGithubRepo } from '@/lib/templates/security-scan'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 interface Params { params: Promise<{ id: string }> }
 
 // Trigger security scan for a submission
 export async function POST(request: NextRequest, { params }: Params) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { id } = await params
   const { action, note } = await request.json()
 

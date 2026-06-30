@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { buildChatbotSystemPrompt } from '@/lib/ai/chatbot'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { deepseekChat } from '@/lib/ai/deepseek'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const MAX_MESSAGES = 10
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?.replace('/v1', '') ?? 'http://localhost:11434'
@@ -12,6 +13,11 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown'
+  if (!checkRateLimit(`chat:${ip}:${slug}`, 20, 60_000)) {
+    return new Response(JSON.stringify({ error: 'Terlalu banyak permintaan' }), { status: 429 })
+  }
 
   const supabase = createServiceClient()
 
@@ -93,9 +99,11 @@ export async function POST(
 
   const incrementTokens = async (tokensUsed: number) => {
     if (!sub) return
+    // ponytail: non-atomic, upgrade ke RPC increment jika traffic tinggi / race condition terdeteksi.
+    const { data: freshSub } = await supabase.from('tenant_subscriptions').select('ai_tokens_used').eq('id', sub.id).single()
     await supabase
       .from('tenant_subscriptions')
-      .update({ ai_tokens_used: sub.ai_tokens_used + tokensUsed })
+      .update({ ai_tokens_used: (freshSub?.ai_tokens_used ?? sub.ai_tokens_used) + tokensUsed })
       .eq('id', sub.id)
   }
 

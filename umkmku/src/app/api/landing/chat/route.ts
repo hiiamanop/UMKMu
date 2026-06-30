@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deepseekChat } from '@/lib/ai/deepseek'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const SYSTEM_PROMPT = `Kamu adalah customer care UMKMu — platform web & toko online untuk brand lokal Indonesia.
 
@@ -23,6 +24,11 @@ PENTING: Kamu HANYA boleh menjawab pertanyaan tentang platform UMKMu (fitur, har
 Jika ingin dihubungi tim, arahkan ke halo@umkmu.site.`
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown'
+  if (!checkRateLimit(`landing-chat:${ip}`, 20, 60_000)) {
+    return NextResponse.json({ error: 'Terlalu banyak permintaan' }, { status: 429 })
+  }
+
   const { messages } = await req.json()
   if (!messages?.length) return NextResponse.json({ error: 'No messages' }, { status: 400 })
 

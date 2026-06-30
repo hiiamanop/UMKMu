@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { calculatePricingBreakdown } from '@/lib/utils/pricing'
 import type { Order, Product } from '@/lib/supabase/types'
 
@@ -22,6 +22,10 @@ import type { Order, Product } from '@/lib/supabase/types'
  */
 export async function GET(request: NextRequest) {
   try {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const searchParams = request.nextUrl.searchParams
     const slug = searchParams.get('slug')
     const status = searchParams.get('status')
@@ -38,10 +42,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Step 1: Get tenant by slug
+    // Step 1: Get tenant by slug (include owner_id for ownership check)
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id')
+      .select('id, owner_id')
       .eq('slug', slug)
       .eq('is_active', true)
       .single()
@@ -53,11 +57,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const isMerchantOwner = tenant.owner_id === user.id
+
     // Step 2: Build query for orders
     let query = supabase
       .from('orders')
       .select('*')
       .eq('tenant_id', tenant.id)
+
+    // If not merchant owner, filter to only show caller's own orders
+    if (!isMerchantOwner) {
+      query = query.eq('customer_email', user.email)
+    }
 
     // Apply filters
     if (status) {

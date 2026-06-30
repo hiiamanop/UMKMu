@@ -1,12 +1,26 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_SIZE = 5 * 1024 * 1024 // 5MB
 
+async function requireTenantOwner(slug: string) {
+  const auth = await createClient()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) return { error: 'Unauthorized' as const }
+  const db = createServiceClient()
+  const { data: tenant } = await db.from('tenants').select('id, owner_id').eq('slug', slug).single()
+  if (!tenant) return { error: 'Toko tidak ditemukan' as const }
+  if (tenant.owner_id && tenant.owner_id !== user.id) return { error: 'Forbidden' as const }
+  return { tenant }
+}
+
 export async function upsertProduct(slug: string, productId: string | null, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const name = formData.get('name')?.toString().trim()
   const description = formData.get('description')?.toString().trim() || null
   const priceRaw = formData.get('price')?.toString()
@@ -50,7 +64,8 @@ export async function upsertProduct(slug: string, productId: string | null, form
       return { error: 'Ukuran gambar maksimal 5MB' }
     }
 
-    const ext = imageFile.name.split('.').pop()
+    const MIME_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }
+    const ext = MIME_EXT[imageFile.type] ?? 'jpg'
     const fileName = `${tenant.id}/${Date.now()}.${ext}`
 
     const { error: uploadError } = await supabase.storage
@@ -105,6 +120,9 @@ export async function upsertProduct(slug: string, productId: string | null, form
 }
 
 export async function deleteProduct(slug: string, productId: string) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const supabase = createServiceClient()
 
   const { data: tenant } = await supabase

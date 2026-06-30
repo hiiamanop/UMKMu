@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function POST(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { promoCode, message } = await req.json()
   if (!promoCode || !message) return NextResponse.json({ error: 'Kode dan pesan wajib diisi' }, { status: 400 })
 
