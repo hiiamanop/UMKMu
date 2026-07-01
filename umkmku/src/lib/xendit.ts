@@ -1,3 +1,5 @@
+import { timingSafeEqual, createHash } from 'crypto'
+
 const XENDIT_BASE = 'https://api.xendit.co'
 
 function xenditAuth() {
@@ -52,9 +54,15 @@ export async function createXenditInvoice(params: XenditInvoiceParams): Promise<
   return res.json()
 }
 
+function safeCompare(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest()
+  const hb = createHash('sha256').update(b).digest()
+  return ha.length === hb.length && timingSafeEqual(ha, hb)
+}
+
 // Verifikasi webhook dari Xendit via callback token
 export function verifyXenditWebhook(token: string): boolean {
   const expected = process.env.XENDIT_WEBHOOK_TOKEN
   if (!expected) return false
-  return token === expected
+  return safeCompare(token, expected)
 }

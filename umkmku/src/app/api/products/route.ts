@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateCategoryData, type CategoryType } from '@/lib/categories'
 import type { Product } from '@/lib/supabase/types'
 
@@ -81,6 +81,10 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const body = await request.json()
     const {
       slug,
@@ -123,7 +127,7 @@ export async function POST(request: NextRequest) {
     // Get tenant
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id, category')
+      .select('id, category, owner_id')
       .eq('slug', slug)
       .eq('is_active', true)
       .single()
@@ -133,6 +137,10 @@ export async function POST(request: NextRequest) {
         { error: 'Tenant not found' },
         { status: 404 }
       )
+    }
+
+    if (tenant.owner_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Validate category-specific data

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendTelegramMessage } from '@/lib/notifications/telegram'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 const RSS_URL = 'https://news.google.com/rss/search?q=UMKM+Indonesia&hl=id&gl=ID&ceid=ID:id'
 
@@ -80,6 +81,8 @@ Balas HANYA dalam format JSON berikut (tanpa markdown, tanpa kode block):
 }
 
 export async function POST() {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   try {
     // Fetch RSS
     const rssRes = await fetch(RSS_URL, { next: { revalidate: 0 } })

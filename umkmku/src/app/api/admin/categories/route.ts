@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function GET() {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const db = createServiceClient()
   const { data, error } = await db.from('categories').select('*').order('sort_order')
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -9,6 +12,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const body = await req.json()
   const { slug, name, description, icon, sort_order } = body
   if (!slug?.trim() || !name?.trim()) {

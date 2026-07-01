@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { slug } = await params
   const body = await req.json()
   const db = createServiceClient()
@@ -17,6 +20,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
 }
 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { slug } = await params
   const db = createServiceClient()
   const { error } = await db.from('categories').delete().eq('slug', slug)

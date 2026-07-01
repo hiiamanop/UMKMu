@@ -88,7 +88,7 @@ const faqs = [
   },
   {
     q: 'Bagaimana cara pembayaran subscription?',
-    a: 'Saat ini pembayaran dikonfirmasi secara manual oleh tim UMKMku via transfer bank atau QRIS. Kami sedang mengintegrasikan payment gateway otomatis.',
+    a: 'Saat ini pembayaran dikonfirmasi secara manual oleh tim UMKMu via transfer bank atau QRIS. Kami sedang mengintegrasikan payment gateway otomatis.',
   },
 ]
 
@@ -103,8 +103,8 @@ export default function PricingPage() {
             <ArrowLeft size={14} />
             Kembali
           </Link>
-          <Link href="/" className="text-xl font-bold" style={{ color: PRIMARY }}>
-            UMKM<span style={{ color: GOLD }}>ku</span>
+          <Link href="/">
+            <img src="/logo.png" alt="UMKMu" style={{ height: '32px', width: 'auto' }} />
           </Link>
           <Link
             href="/onboarding"

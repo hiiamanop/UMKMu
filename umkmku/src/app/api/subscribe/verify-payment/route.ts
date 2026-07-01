@@ -9,6 +9,10 @@ function refCode(invoiceId: string) {
   return invoiceId.replace(/-/g, '').slice(-6).toUpperCase()
 }
 
+function escapeHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 function buildPrompt(amount: number, refCode: string, merchantName: string | null, invoiceCreatedAt: Date) {
   const merchantCheck = merchantName
     ? `4. Apakah nama penerima mengandung "${merchantName.slice(0, 25)}"?\n   (Aplikasi sering memotong nama merchant menjadi 25 karakter pertama — cocokkan hanya bagian itu)`
@@ -74,6 +78,10 @@ export async function POST(req: NextRequest) {
   const amount = Number(form.get('amount'))
 
   if (!file || !invoiceId) return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 })
+
+  if (file.size > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: 'File terlalu besar (max 10MB)' }, { status: 413 })
+  }
 
   const db = createServiceClient()
 
@@ -187,12 +195,12 @@ export async function POST(req: NextRequest) {
   ])
 
   const contactHtml = [
-    supportPhone ? `WhatsApp: <a href="https://wa.me/${supportPhone}" style="color:#0A2F73">wa.me/${supportPhone}</a>` : null,
-    supportEmail ? `Email: <a href="mailto:${supportEmail}" style="color:#0A2F73">${supportEmail}</a>` : null,
+    supportPhone ? `WhatsApp: <a href="https://wa.me/${escapeHtml(supportPhone)}" style="color:#0A2F73">wa.me/${escapeHtml(supportPhone)}</a>` : null,
+    supportEmail ? `Email: <a href="mailto:${escapeHtml(supportEmail)}" style="color:#0A2F73">${escapeHtml(supportEmail)}</a>` : null,
   ].filter(Boolean).join(' &nbsp;|&nbsp; ')
 
-  const message = `Bukti pembayaran tidak dapat diverifikasi otomatis: <em>${reason}</em>.<br><br>` +
-    `Silakan kirimkan bukti bayar beserta kode referensi <strong>${ref}</strong> langsung kepada tim kami` +
+  const message = `Bukti pembayaran tidak dapat diverifikasi otomatis: <em>${escapeHtml(reason)}</em>.<br><br>` +
+    `Silakan kirimkan bukti bayar beserta kode referensi <strong>${escapeHtml(ref)}</strong> langsung kepada tim kami` +
     (contactHtml ? `:<br>${contactHtml}` : '.')
 
   return NextResponse.json({ verified: false, message })

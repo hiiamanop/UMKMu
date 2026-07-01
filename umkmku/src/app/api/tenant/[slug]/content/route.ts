@@ -75,7 +75,7 @@ export async function PATCH(
       .single()
 
     for (const [arrayKey, itemEdits] of Object.entries(arrayEdits)) {
-      const currentArr: PageItem[] = (current as Record<string, unknown>)?.[arrayKey] as PageItem[] ?? []
+      const currentArr: PageItem[] = (current as unknown as Record<string, unknown>)?.[arrayKey] as PageItem[] ?? []
       const newArr = [...currentArr]
       for (const [idxStr, fields] of Object.entries(itemEdits)) {
         const idx = Number(idxStr)

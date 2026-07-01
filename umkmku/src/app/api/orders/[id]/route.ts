@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 /**
  * GET /api/orders/[id]/status
@@ -33,6 +33,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { id: orderId } = await params
 
     if (!orderId || typeof orderId !== 'string') {
@@ -78,6 +82,14 @@ export async function GET(
         { error: 'Order not found' },
         { status: 404 }
       )
+    }
+
+    // Ownership check: merchant owner of tenant OR customer who placed the order
+    const { data: tenant } = await supabase.from('tenants').select('owner_id').eq('id', order.tenant_id).single()
+    const isMerchantOwner = tenant?.owner_id === user.id
+    const isOrderCustomer = order.customer_email === user.email
+    if (!isMerchantOwner && !isOrderCustomer) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     // Return order details with pricing breakdown
@@ -133,6 +145,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authClient = await createClient()
+    const { data: { user } } = await authClient.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { id: orderId } = await params
     const body = await request.json()
 
@@ -172,6 +188,15 @@ export async function PUT(
     }
 
     const supabase = createServiceClient()
+
+    // Merchant ownership check — only tenant owner can update orders
+    const { data: orderForAuth } = await supabase.from('orders').select('tenant_id').eq('id', orderId).single()
+    if (orderForAuth) {
+      const { data: tenantForAuth } = await supabase.from('tenants').select('owner_id').eq('id', orderForAuth.tenant_id).single()
+      if (tenantForAuth?.owner_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
 
     // Prepare update data
     const updateData: any = {

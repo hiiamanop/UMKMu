@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 
 // POST /api/onboarding/link-merchant
 // Dipanggil tepat setelah signUp berhasil di onboarding.
 // Set role='merchant' di user_profiles + owner_id di tenants.
 export async function POST(req: NextRequest) {
+  const auth = await createClient()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { slug, userId } = await req.json()
   if (!slug || !userId) return NextResponse.json({ error: 'Missing slug or userId' }, { status: 400 })
+
+  // Pastikan userId dari body === user.id dari session
+  if (user.id !== userId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const supabase = createServiceClient()
 

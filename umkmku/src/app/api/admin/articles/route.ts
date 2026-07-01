@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function GET() {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from('articles')
@@ -13,6 +16,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { id, status, image_url } = await req.json()
   const supabase = createServiceClient()
 

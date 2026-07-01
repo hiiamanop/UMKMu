@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function GET() {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const db = createServiceClient()
   const { data, error } = await db
     .from('promo_codes')
@@ -12,6 +15,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const body = await req.json()
   const { code, discount_type, discount_value, min_order_amount, max_discount_amount, usage_limit, valid_until } = body
 
@@ -38,6 +43,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { id, is_active } = await req.json()
   const db = createServiceClient()
   const { error } = await db.from('promo_codes').update({ is_active }).eq('id', id)

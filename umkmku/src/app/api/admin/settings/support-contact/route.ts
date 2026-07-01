@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 export async function POST(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { phone, email } = await req.json()
   const db = createServiceClient()
   const now = new Date().toISOString()
