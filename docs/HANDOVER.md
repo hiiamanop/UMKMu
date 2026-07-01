@@ -4,6 +4,54 @@
 
 ---
 
+## Session: 2026-07-01 (sesi 6)
+
+**Status:** ✅ Public Blog (Insight) + Admin Article Generator
+
+### Dikerjakan
+
+- **[FEAT] Blog generator** — `api/admin/articles/generate/route.ts` ditulis ulang:
+  - Sumber berita: Google News RSS publik (tanpa API key) per kategori aktif dari DB
+  - Generate 1 artikel per kategori aktif + 1 artikel UMKM umum (fokus tumbuh mandiri, bukan keluhan marketplace)
+  - AI: **selalu DeepSeek** (bukan Ollama) — tidak ada context window limit, bisa parallel
+  - Prompt: judul provokatif/actionable, struktur HTML ketat, `<strong>` bukan `**`, justify alignment
+  - Prompt gambar: tema navy blue UMKMku, profesional, photorealistic
+  - Post-process: strip `**` → `<strong>`, `*` → `<em>`, double newline → `</p><p>`
+
+- **[FEAT] Public blog** — halaman insight diubah dari static hardcode ke dynamic DB:
+  - `/insight/page.tsx` → fetch `articles` table (published), hero = terbaru, grid 6 artikel berikutnya (max 7 total)
+  - `/insight/[slug]/page.tsx` → halaman artikel detail, SEO metadata, `text-justify`, `object-position` dari DB
+  - Waktu ditampilkan sebagai **relative time** ("3 hari lalu") bukan durasi baca
+  - `/blog/` directory dihapus — semua dipindah ke `/insight/`
+
+- **[FEAT] Admin articles CRUD**:
+  - Edit drawer (slide-over): edit judul, isi HTML, gambar
+  - Upload gambar: compress client-side via Canvas API → WebP max 1200px quality 0.82, dikirim ke `/api/admin/articles/upload`
+  - Drag repositioning gambar: set `object-position` (disimpan ke kolom `image_position`)
+  - Delete artikel dengan konfirmasi
+  - Pagination server-side 10 artikel per halaman
+  - `content` field dimasukkan ke SELECT agar isi artikel tampil saat edit
+
+- **[SCHEMA]** Migration `20260701000001_articles_image_position.sql`:
+  - Tambah kolom `image_position TEXT DEFAULT '50% 50%'` di tabel `articles`
+
+- **[FIX] Sitemap** — artikel URL diupdate dari `/blog/[slug]` → `/insight/[slug]`
+- **[FIX] Footer landing page** — hapus duplikat link Blog, gabung jadi "Insight & Blog" → `/insight`
+- **[FIX] Admin articles GET** — tambah `content` dan `image_position` ke SELECT query
+
+### Gotcha Teknis
+- `new Image()` di client component konflik dengan Next.js `Image` import → pakai `document.createElement('img')` sebagai gantinya
+- DeepSeek generate artikel secara parallel (tidak single-threaded seperti Ollama) — hapus sequential loop
+- Google News RSS adalah endpoint publik, tidak butuh API key apapun
+
+### ⚠️ Yang Masih Perlu Dilakukan
+- Submit sitemap ke Google Search Console: `https://www.umkmu.site/sitemap.xml`
+- Daftarkan Google Business Profile untuk backlink pertama
+- OG image (`/public/og-image.png`) masih belum ada
+- Legal pages masih perlu review lawyer
+
+---
+
 ## Session: 2026-06-30 (sesi 5)
 
 **Status:** ✅ Logo image + build fix

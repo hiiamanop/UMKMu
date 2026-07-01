@@ -1,7 +1,7 @@
 # UMKMku.com, Project Knowledge Base
 
 > Baca ini di awal setiap session. Ini adalah satu-satunya source of truth untuk keputusan arsitektur, produk, dan teknis.
-> **Terakhir diperbarui:** 2026-06-30 (sesi 5, logo image + build fix)
+> **Terakhir diperbarui:** 2026-07-01 (sesi 6, public blog + article generator)
 
 ---
 
@@ -384,7 +384,7 @@ Platform dianggap siap validasi jika:
 
 > Log perubahan per session ada di [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
-### Status per Area (2026-06-30)
+### Status per Area (2026-07-01)
 
 | Area | Status | Catatan |
 |------|--------|---------|
@@ -403,8 +403,10 @@ Platform dianggap siap validasi jika:
 | **SEO** | ✅ Done | Dynamic metadata, sitemap, robots, JSON-LD |
 | **Legal pages** | ✅ Draft | `/privacy` + `/terms`, perlu review lawyer |
 | **Logo** | ✅ Done | `logo.png` di semua 18 halaman, navbar, footer, admin, login |
+| **Public blog** | ✅ Done | `/insight/[slug]` live, artikel dari DB, SEO metadata |
+| **Article generator** | ✅ Done | DeepSeek, RSS per kategori, parallel, gambar prompt |
 | OG image | ⚠️ Missing | `/public/og-image.png` belum ada |
-| Public blog | 📋 Next | `/blog/[slug]` belum ada, artikel tidak bisa diindex |
+| Google Search Console | ⚠️ Todo | Sitemap belum disubmit, site belum terindex |
 
 ---
 
@@ -427,3 +429,6 @@ Platform dianggap siap validasi jika:
 - `supabase.auth.admin.getUserByEmail()` **tidak exist** di Supabase JS v2, gunakan `listUsers().find()` atau query DB
 - Logo dalam `flex-col` parent perlu `self-start` class agar tidak di-stretch horizontal
 - Chat AI **tidak boleh** lewat Vercel AI SDK + Ollama, pakai `geminiChat()` dari `lib/ai/gemini.ts` langsung
+- `new Image()` di client component konflik dengan Next.js `Image` import → pakai `document.createElement('img')`
+- Article generator **selalu pakai DeepSeek** (bukan AI_PROVIDER env) — DeepSeek tidak punya context window limit dan bisa parallel
+- Google News RSS adalah endpoint publik, tidak butuh API key: `https://news.google.com/rss/search?q={query}&hl=id&gl=ID&ceid=ID:id`
