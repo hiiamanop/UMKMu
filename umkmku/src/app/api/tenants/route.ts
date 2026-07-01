@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const { data: tenant, error } = await supabase
       .from('tenants')
-      .select('*')
+      .select('id, slug, brand_name, tagline, category, primary_color, secondary_color, logo_url, hero_image_url, whatsapp, instagram, website, about, meta_title, meta_description, chatbot_enabled, chatbot_name, is_active')
       .eq('slug', slug)
       .eq('is_active', true)
       .single()

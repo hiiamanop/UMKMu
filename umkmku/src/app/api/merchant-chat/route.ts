@@ -18,8 +18,17 @@ export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('slug')
   if (!orderId || !slug) return NextResponse.json({ error: 'orderId and slug required' }, { status: 400 })
 
+  // Verifikasi session merchant = owner toko (same as POST)
+  const supabaseAuth = await createClient()
+  const { data: { user } } = await supabaseAuth.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const result = await verifyMerchantOwnsOrder(slug, orderId)
   if (!result) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (result.tenant.owner_id && result.tenant.owner_id !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const supabase = createServiceClient()
   const { data: messages } = await supabase

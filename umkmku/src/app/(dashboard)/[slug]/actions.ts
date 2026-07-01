@@ -6,9 +6,23 @@ function invalidateTenant(slug: string) {
   revalidatePath(`/store/${slug}`, 'page')
   revalidatePath(`/${slug}`, 'page')
 }
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+
+async function requireTenantOwner(slug: string) {
+  const auth = await createClient()
+  const { data: { user } } = await auth.auth.getUser()
+  if (!user) return { error: 'Unauthorized' as const }
+  const db = createServiceClient()
+  const { data: tenant } = await db.from('tenants').select('id, owner_id').eq('slug', slug).single()
+  if (!tenant) return { error: 'Toko tidak ditemukan' as const }
+  if (tenant.owner_id && tenant.owner_id !== user.id) return { error: 'Forbidden' as const }
+  return { tenant }
+}
 
 export async function updateBrand(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const brand_name = formData.get('brand_name')?.toString().trim()
   const tagline = formData.get('tagline')?.toString().trim() || null
   const description = formData.get('description')?.toString().trim() || null
@@ -61,6 +75,9 @@ export async function updateBrand(slug: string, formData: FormData) {
 }
 
 export async function updateAppearance(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const primary_color = formData.get('primary_color')?.toString()
   const secondary_color = formData.get('secondary_color')?.toString()
   const accent_color = formData.get('accent_color')?.toString()
@@ -129,6 +146,9 @@ export async function updateAppearance(slug: string, formData: FormData) {
 // --- Testimonials ---
 
 export async function saveTestimonial(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const id = formData.get('id')?.toString() || null
   const author_name = formData.get('author_name')?.toString().trim()
   const author_title = formData.get('author_title')?.toString().trim() || null
@@ -172,6 +192,9 @@ export async function saveTestimonial(slug: string, formData: FormData) {
 }
 
 export async function deleteTestimonial(slug: string, id: string) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const supabase = createServiceClient()
   const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
   if (!tenant) return { error: 'Toko tidak ditemukan' }
@@ -202,6 +225,9 @@ async function uploadPageImage(
 }
 
 export async function updateAboutPage(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const supabase = createServiceClient()
   const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
   if (!tenant) return { error: 'Toko tidak ditemukan' }
@@ -230,6 +256,9 @@ export async function updateAboutPage(slug: string, formData: FormData) {
 }
 
 export async function updateIngredientsPage(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const supabase = createServiceClient()
   const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
   if (!tenant) return { error: 'Toko tidak ditemukan' }
@@ -260,6 +289,9 @@ export async function updateIngredientsPage(slug: string, formData: FormData) {
 }
 
 export async function updateSustainabilityPage(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const supabase = createServiceClient()
   const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', slug).single()
   if (!tenant) return { error: 'Toko tidak ditemukan' }
@@ -293,6 +325,9 @@ export async function updateSustainabilityPage(slug: string, formData: FormData)
 }
 
 export async function updateChatbot(slug: string, formData: FormData) {
+  const ownerCheck = await requireTenantOwner(slug)
+  if ('error' in ownerCheck) return { error: ownerCheck.error }
+
   const chatbot_name = formData.get('chatbot_name')?.toString().trim()
   const chatbot_persona = formData.get('chatbot_persona')?.toString().trim() || null
 

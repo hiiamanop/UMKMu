@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { sendSubscriptionActivated } from '@/lib/email/resend'
 import { sendTelegramMessage } from '@/lib/notifications/telegram'
+import { requireSuperAdmin } from '@/lib/supabase/admin-guard'
 
 const PLAN_NAMES: Record<string, string> = { business: 'Business', enterprise: 'Enterprise' }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireSuperAdmin()
+  if (denied) return denied
   const { invoiceId, tenantId } = await req.json()
   if (!invoiceId) return NextResponse.json({ error: 'invoiceId wajib' }, { status: 400 })
 

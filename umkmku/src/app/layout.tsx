@@ -18,32 +18,56 @@ const hankenGrotesk = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL('https://www.umkmu.site'),
   title: {
-    default: 'UMKMu — Toko Online untuk UMKM Indonesia',
+    default: 'UMKMu — Platform Toko Online untuk UMKM Indonesia',
     template: '%s | UMKMu',
   },
-  description: 'Bangun toko online sendiri dalam 60 detik. AI onboarding, chatbot penjualan, notifikasi WhatsApp otomatis — satu platform untuk brand lokal Indonesia bebas dari ketergantungan marketplace.',
-  keywords: ['toko online UMKM', 'web builder UMKM', 'toko digital Indonesia', 'platform e-commerce UMKM', 'chatbot penjualan AI', 'toko online tanpa marketplace'],
+  description: 'Buat toko online profesional untuk UMKM-mu dalam 60 detik. Subdomain sendiri, AI chatbot, checkout QRIS, dan manajemen pesanan — semua dalam satu platform.',
+  keywords: ['toko online umkm', 'website umkm indonesia', 'marketplace builder', 'toko online skincare', 'toko online parfum', 'jualan online indonesia'],
   authors: [{ name: 'UMKMu' }],
   openGraph: {
     type: 'website',
     locale: 'id_ID',
-    url: 'https://umkmu.site',
+    url: 'https://www.umkmu.site',
     siteName: 'UMKMu',
-    title: 'UMKMu — Toko Online untuk UMKM Indonesia',
-    description: 'Bangun toko online sendiri dalam 60 detik. AI onboarding, chatbot penjualan, notifikasi WhatsApp otomatis — satu platform untuk brand lokal Indonesia.',
+    title: 'UMKMu — Platform Toko Online untuk UMKM Indonesia',
+    description: 'Buat toko online profesional untuk UMKM-mu dalam 60 detik.',
+    images: [{ url: 'https://www.umkmu.site/og-image.png', width: 1200, height: 630, alt: 'UMKMu Platform' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'UMKMu — Toko Online untuk UMKM Indonesia',
-    description: 'Bangun toko online sendiri dalam 60 detik. Platform untuk brand lokal Indonesia bebas dari ketergantungan marketplace.',
+    title: 'UMKMu — Platform Toko Online untuk UMKM Indonesia',
+    description: 'Buat toko online profesional untuk UMKM-mu dalam 60 detik.',
   },
   robots: {
     index: true,
     follow: true,
   },
+  icons: {
+    icon: [
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico' },
+    ],
+    apple: { url: '/apple-touch-icon.png', sizes: '180x180' },
+    other: [
+      { rel: 'android-chrome', url: '/android-chrome-192x192.png', sizes: '192x192' },
+      { rel: 'android-chrome', url: '/android-chrome-512x512.png', sizes: '512x512' },
+    ],
+  },
 };
+
+const orgSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'UMKMu',
+  url: 'https://www.umkmu.site',
+  logo: 'https://www.umkmu.site/logo.png',
+  description: 'Platform web dan marketplace builder untuk UMKM lokal Indonesia.',
+  address: { '@type': 'PostalAddress', addressCountry: 'ID' },
+  contactPoint: { '@type': 'ContactPoint', email: 'halo@umkmu.site' },
+}
 
 export default function RootLayout({
   children,
@@ -53,6 +77,7 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${libreCaslon.variable} ${hankenGrotesk.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }} />
         {children}
         <Analytics />
         <SpeedInsights />
