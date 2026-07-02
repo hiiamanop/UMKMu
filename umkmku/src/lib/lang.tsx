@@ -26,9 +26,13 @@ export function LangToggle({ lang, toggle }: { lang: Lang; toggle: () => void })
     <button
       onClick={toggle}
       title={lang === 'id' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia'}
-      className="w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-gray-100 transition-colors"
+      className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
     >
-      {lang === 'id' ? '🇮🇩' : '🇬🇧'}
+      <img
+        src={lang === 'id' ? 'https://flagcdn.com/id.svg' : 'https://flagcdn.com/gb.svg'}
+        alt={lang === 'id' ? 'ID' : 'GB'}
+        className="w-6 h-6 rounded-full object-cover"
+      />
     </button>
   )
 }

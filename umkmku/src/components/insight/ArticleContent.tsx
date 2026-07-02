@@ -45,7 +45,7 @@ export function ArticleContent({ article }: { article: Article }) {
 
       {/* Hero image */}
       {article.image_url && (
-        <div className="relative w-full h-64 md:h-96 bg-[#E5EAF0]">
+        <div className="relative w-full h-80 md:h-[480px] bg-[#E5EAF0]">
           <Image src={article.image_url} alt={article.title} fill className="object-cover"
             style={{ objectPosition: article.image_position ?? '50% 50%' }} priority />
         </div>

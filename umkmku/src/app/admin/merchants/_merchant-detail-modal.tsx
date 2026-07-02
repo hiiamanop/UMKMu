@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, ExternalLink, Package, ShoppingBag, Phone, User, Calendar, Loader2 } from 'lucide-react'
+import { X, ExternalLink, Package, ShoppingBag, Phone, User, Calendar, Loader2, Zap } from 'lucide-react'
 
 const PRIMARY = '#0A2F73'
 const BORDER = '#E5EAF0'
@@ -31,6 +31,7 @@ interface Detail {
     current_period_end: string | null
     ai_tokens_used: number
     transactions_used: number
+    ai_token_limit_override: number | null
   } | null
   product_count: number
   order_count: number
@@ -48,12 +49,29 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 export function MerchantDetailModal({ tenantId, onClose }: { tenantId: string; onClose: () => void }) {
   const [detail, setDetail] = useState<Detail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tokenOverride, setTokenOverride] = useState<string>('')
+  const [savingToken, setSavingToken] = useState(false)
 
   useEffect(() => {
     fetch(`/api/admin/merchants/${tenantId}`)
       .then(r => r.json())
-      .then(d => { setDetail(d); setLoading(false) })
+      .then(d => {
+        setDetail(d)
+        setTokenOverride(d.subscription?.ai_token_limit_override?.toString() ?? '')
+        setLoading(false)
+      })
   }, [tenantId])
+
+  async function saveTokenOverride() {
+    setSavingToken(true)
+    const val = tokenOverride.trim() === '' ? null : Number(tokenOverride)
+    await fetch(`/api/admin/merchants/${tenantId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ai_token_limit_override: val }),
+    })
+    setSavingToken(false)
+  }
 
   const sub = detail?.subscription
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'localhost:3000'
@@ -123,9 +141,32 @@ export function MerchantDetailModal({ tenantId, onClose }: { tenantId: string; o
                     </div>
                     {sub && (
                       <div className="flex items-center gap-1.5 text-xs" style={{ color: TEXT_SEC }}>
-                        <span>{sub.transactions_used} transaksi dipakai</span>
+                        <Zap size={12} /> <span>{(sub.ai_tokens_used / 1000).toFixed(1)}k token dipakai</span>
                       </div>
                     )}
+                  </div>
+
+                  {/* Token limit override */}
+                  <div className="pt-3 mt-2 border-t" style={{ borderColor: BORDER }}>
+                    <p className="text-xs font-medium mb-2" style={{ color: TEXT_SEC }}>Override Limit Token (kosongkan = pakai limit plan)</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={tokenOverride}
+                        onChange={e => setTokenOverride(e.target.value)}
+                        placeholder={`default plan`}
+                        className="flex-1 text-xs px-3 py-1.5 rounded-lg border outline-none focus:ring-1"
+                        style={{ borderColor: BORDER, fontSize: '12px' }}
+                      />
+                      <button
+                        onClick={saveTokenOverride}
+                        disabled={savingToken}
+                        className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white disabled:opacity-50"
+                        style={{ background: PRIMARY }}
+                      >
+                        {savingToken ? '...' : 'Simpan'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

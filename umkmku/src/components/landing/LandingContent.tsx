@@ -222,9 +222,13 @@ export function LandingContent() {
             <button
               onClick={toggle}
               title={lang === 'id' ? 'Switch to English' : 'Ganti ke Bahasa Indonesia'}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-gray-100 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
             >
-              {lang === 'id' ? '🇮🇩' : '🇬🇧'}
+              <img
+                src={lang === 'id' ? 'https://flagcdn.com/id.svg' : 'https://flagcdn.com/gb.svg'}
+                alt={lang === 'id' ? 'ID' : 'GB'}
+                className="w-6 h-6 rounded-full object-cover"
+              />
             </button>
             <Link href="/subscribe" className="hidden sm:inline-flex text-sm font-semibold px-4 py-2 rounded-lg transition-opacity hover:opacity-90" style={{ background: GOLD, color: '#1a1a1a' }}>
               {tx.nav.subscribe}

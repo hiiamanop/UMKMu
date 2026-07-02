@@ -27,6 +27,29 @@ export async function deepseekChat(
   return data.choices?.[0]?.message?.content ?? ''
 }
 
+export async function deepseekChatWithUsage(
+  messages: { role: string; content: string }[],
+  systemPrompt?: string,
+): Promise<{ text: string; tokensUsed: number }> {
+  const res = await fetch(DEEPSEEK_BASE, {
+    method: 'POST',
+    headers: headers(),
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+        ...messages.map(m => ({ role: m.role, content: m.content })),
+      ],
+    }),
+  })
+  if (!res.ok) throw new Error(`DeepSeek error: ${res.status}`)
+  const data = await res.json()
+  return {
+    text: data.choices?.[0]?.message?.content ?? '',
+    tokensUsed: (data.usage?.prompt_tokens ?? 0) + (data.usage?.completion_tokens ?? 0),
+  }
+}
+
 // DeepSeek API belum support vision, pakai Gemini 2.0 Flash (free tier)
 export async function deepseekVision(prompt: string, imageBase64: string, mimeType = 'image/jpeg'): Promise<string> {
   const key = process.env.GEMINI_API_KEY

@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { buildChatbotSystemPrompt } from '@/lib/ai/chatbot'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
-import { deepseekChat } from '@/lib/ai/deepseek'
+import { deepseekChatWithUsage } from '@/lib/ai/deepseek'
+import { sendWhatsAppMessage } from '@/lib/notifications/whatsapp'
 import { checkRateLimit } from '@/lib/rate-limit'
 
 const MAX_MESSAGES = 10
@@ -42,11 +43,12 @@ export async function POST(
   // Cek kuota token subscription
   const { data: sub } = await supabase
     .from('tenant_subscriptions')
-    .select('id, ai_tokens_used, plan_id')
+    .select('id, ai_tokens_used, plan_id, ai_token_limit_override, notified_80pct_tokens')
     .eq('tenant_id', tenant.id)
     .in('status', ['trial', 'active'])
     .maybeSingle()
 
+  let tokenLimit: number | null = null
   if (sub) {
     const { data: plan } = await supabase
       .from('subscription_plans')
@@ -55,8 +57,9 @@ export async function POST(
       .single()
 
     if (plan) {
-      const limit = plan.ai_token_limit === -1 ? (plan.ai_token_hard_cap ?? Infinity) : plan.ai_token_limit
-      if (sub.ai_tokens_used >= limit) {
+      const planLimit = plan.ai_token_limit === -1 ? (plan.ai_token_hard_cap ?? null) : plan.ai_token_limit
+      tokenLimit = sub.ai_token_limit_override ?? planLimit
+      if (tokenLimit !== null && sub.ai_tokens_used >= tokenLimit) {
         return new Response(
           JSON.stringify({ error: 'Kuota AI chatbot bulan ini sudah habis. Upgrade plan untuk melanjutkan.' }),
           { status: 429 }
@@ -100,11 +103,20 @@ export async function POST(
   const incrementTokens = async (tokensUsed: number) => {
     if (!sub) return
     // ponytail: non-atomic, upgrade ke RPC increment jika traffic tinggi / race condition terdeteksi.
-    const { data: freshSub } = await supabase.from('tenant_subscriptions').select('ai_tokens_used').eq('id', sub.id).single()
-    await supabase
-      .from('tenant_subscriptions')
-      .update({ ai_tokens_used: (freshSub?.ai_tokens_used ?? sub.ai_tokens_used) + tokensUsed })
-      .eq('id', sub.id)
+    const { data: freshSub } = await supabase.from('tenant_subscriptions').select('ai_tokens_used, notified_80pct_tokens').eq('id', sub.id).single()
+    const newTotal = (freshSub?.ai_tokens_used ?? sub.ai_tokens_used) + tokensUsed
+    const update: Record<string, unknown> = { ai_tokens_used: newTotal }
+
+    if (tokenLimit && !freshSub?.notified_80pct_tokens && newTotal / tokenLimit >= 0.8) {
+      update.notified_80pct_tokens = true
+      const pct = Math.round(newTotal / tokenLimit * 100)
+      sendWhatsAppMessage(
+        tenant.whatsapp_number,
+        `⚠️ *Token AI chatbot hampir habis!*\n\nHalo ${tenant.brand_name}, token AI toko kamu sudah terpakai *${pct}%*.\n\nSisa: ${(tokenLimit - newTotal).toLocaleString('id-ID')} token.\n\nUpgrade plan untuk mendapatkan lebih banyak token: ${process.env.NEXT_PUBLIC_APP_URL}/store/${tenant.slug}/dashboard/subscription`,
+      ).catch(() => {})
+    }
+
+    await supabase.from('tenant_subscriptions').update(update).eq('id', sub.id)
   }
 
   const inputTokens = estimateTokens(systemPrompt + messages.map(m => m.content).join(''))
@@ -161,8 +173,8 @@ export async function POST(
 
   // Fallback: DeepSeek
   try {
-    const text = await deepseekChat(messages, systemPrompt)
-    await incrementTokens(inputTokens + estimateTokens(text))
+    const { text, tokensUsed } = await deepseekChatWithUsage(messages, systemPrompt)
+    await incrementTokens(tokensUsed || inputTokens + estimateTokens(text))
     const stream = new ReadableStream({
       start(controller) { controller.enqueue(encoder.encode(text)); controller.close() },
     })

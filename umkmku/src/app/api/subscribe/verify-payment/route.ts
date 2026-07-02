@@ -18,23 +18,24 @@ function buildPrompt(amount: number, refCode: string, merchantName: string | nul
     ? `4. Apakah nama penerima mengandung "${merchantName.slice(0, 25)}"?\n   (Aplikasi sering memotong nama merchant menjadi 25 karakter pertama, cocokkan hanya bagian itu)`
     : ''
 
-  const invoiceTime = invoiceCreatedAt.toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
-  const deadlineTime = new Date(invoiceCreatedAt.getTime() + 30 * 60 * 1000).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
+  const fmtTime = (d: Date) => d.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false })
+  const invoiceDate  = invoiceCreatedAt.toLocaleDateString('id-ID', { timeZone: 'Asia/Jakarta', day: 'numeric', month: 'long', year: 'numeric' })
+  const invoiceStart = fmtTime(invoiceCreatedAt)
+  const invoiceEnd   = fmtTime(new Date(invoiceCreatedAt.getTime() + 30 * 60 * 1000))
 
   return `Ini adalah bukti pembayaran QRIS. Verifikasi hal berikut:
-
-KONTEKS WAKTU:
-- Invoice dibuat: ${invoiceTime} WIB
-- Batas bayar: ${deadlineTime} WIB
-- Pembayaran harus dilakukan SETELAH invoice dibuat dan SEBELUM batas waktu.
-  Jika waktu di struk jelas-jelas lebih awal dari waktu invoice (berarti struk lama/daur ulang) → valid = false.
-  Jika waktu tidak terbaca atau tidak tampil di struk → abaikan poin ini.
 
 WAJIB (semua harus terpenuhi):
 1. Apakah ini screenshot/foto pembayaran QRIS yang ASLI? Ciri editan: font tidak konsisten, pikselasi aneh di area nominal, angka terlihat ditempel, background tidak natural.
 2. Apakah nominal yang tertera adalah Rp ${amount.toLocaleString('id-ID')} (toleransi ±1000)?
 3. Apakah status transaksi BERHASIL/SUKSES?
 ${merchantCheck}
+4. CEK WAKTU TRANSAKSI:
+   - KONTEKS WAKTU: Invoice ini dibuat pada ${invoiceDate} pukul ${invoiceStart} WIB. Pembayaran valid jika dilakukan antara ${invoiceStart}–${invoiceEnd} WIB pada tanggal ${invoiceDate}. GUNAKAN HANYA informasi ini sebagai referensi waktu, JANGAN gunakan asumsi internal kamu tentang tahun atau tanggal saat ini.
+   - Konversi waktu struk ke format 24 jam (10:09 AM = 10:09, 2:30 PM = 14:30).
+   - Jika struk menampilkan JAM: bandingkan hanya jam:menit dengan rentang ${invoiceStart}–${invoiceEnd}. Dalam rentang → lolos. Di luar → valid = false.
+   - Jika struk hanya menampilkan TANGGAL: cocokkan dengan ${invoiceDate}. Sama → lolos. Berbeda → valid = false.
+   - Jika tidak terbaca sama sekali → abaikan, jangan tolak.
 
 PENGUAT (opsional, tingkatkan keyakinan jika ada):
 - Apakah kode referensi "${refCode}" tertera di kolom catatan/berita transfer?
@@ -43,7 +44,7 @@ PENGUAT (opsional, tingkatkan keyakinan jika ada):
 Jika semua poin WAJIB terpenuhi → valid = true, meski kode referensi tidak ada.
 Jika ada poin WAJIB yang tidak terpenuhi → valid = false.
 
-Jawab hanya JSON: {"valid": true/false, "ref_found": true/false, "reason": "alasan singkat dalam bahasa Indonesia"}`
+Jawab hanya JSON: {"valid": true/false, "ref_found": true/false, "transaction_time": "waktu yang kamu baca dari struk, atau null jika tidak terbaca", "reason": "alasan singkat dalam bahasa Indonesia"}`
 }
 
 async function checkWithOllama(base64: string, amount: number, ref: string, merchantName: string | null, invoiceCreatedAt: Date) {
@@ -61,14 +62,14 @@ async function checkWithOllama(base64: string, amount: number, ref: string, merc
   const data = await res.json()
   const match = (data.message?.content ?? '').match(/\{[\s\S]*\}/)
   if (!match) throw new Error('No JSON')
-  return JSON.parse(match[0]) as { valid: boolean; reason: string }
+  return JSON.parse(match[0]) as { valid: boolean; reason: string; transaction_time?: string }
 }
 
 async function checkWithGemini(base64: string, mimeType: string, amount: number, ref: string, merchantName: string | null, invoiceCreatedAt: Date) {
   const result = await deepseekVision(buildPrompt(amount, ref, merchantName, invoiceCreatedAt), base64, mimeType as 'image/jpeg' | 'image/png' | 'image/webp')
   const match = result.match(/\{[\s\S]*\}/)
   if (!match) throw new Error('No JSON')
-  return JSON.parse(match[0]) as { valid: boolean; reason: string }
+  return JSON.parse(match[0]) as { valid: boolean; reason: string; transaction_time?: string }
 }
 
 export async function POST(req: NextRequest) {
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
 
   let verified = false
   let reason = 'Gagal memverifikasi'
+  let transactionTime: string | null = null
   const useOllama = !!process.env.OLLAMA_BASE_URL
 
   try {
@@ -131,6 +133,7 @@ export async function POST(req: NextRequest) {
       : await checkWithGemini(base64, file.type, amount, ref, merchantName, invoiceCreatedAt)
     verified = parsed.valid === true
     reason = parsed.reason ?? reason
+    transactionTime = parsed.transaction_time ?? null
   } catch (err) {
     console.error('[verify-payment] vision error:', err)
     if (useOllama) {
@@ -138,6 +141,7 @@ export async function POST(req: NextRequest) {
         const parsed = await checkWithGemini(base64, file.type, amount, ref, merchantName, invoiceCreatedAt)
         verified = parsed.valid === true
         reason = parsed.reason ?? reason
+        transactionTime = parsed.transaction_time ?? null
       } catch (err2) {
         console.error('[verify-payment] Gemini fallback error:', err2)
       }
@@ -153,11 +157,12 @@ export async function POST(req: NextRequest) {
       payment_proof_url: proofUrl,
     }).eq('id', invoiceId)
 
-    await Promise.all([
+    Promise.all([
       sendTelegramMessage(
         `✅ <b>Pembayaran Terverifikasi AI, UMKMu ${invoice.plan_id}</b>\n` +
         `Nama: ${invoice.full_name}\nEmail: ${invoice.email}\n` +
-        `Nominal: Rp ${invoice.final_amount.toLocaleString('id-ID')}\nRef: ${ref}\n\n` +
+        `Nominal: Rp ${invoice.final_amount.toLocaleString('id-ID')}\nRef: ${ref}\n` +
+        `🤖 AI: ${reason}\n\n` +
         `⚡ Validasi manual di /admin/invoices`
       ),
       sendPaymentReceived({
@@ -168,7 +173,7 @@ export async function POST(req: NextRequest) {
         ppn: invoice.ppn,
         invoiceId,
       }),
-    ])
+    ]).catch(() => {})
 
     return NextResponse.json({ verified: true })
   }
@@ -177,7 +182,7 @@ export async function POST(req: NextRequest) {
     await db.from('subscription_invoices').update({ payment_proof_url: proofUrl }).eq('id', invoiceId)
   }
 
-  await Promise.all([
+  Promise.all([
     sendTelegramMessage(
       `⚠️ <b>Bukti Bayar Ditolak AI, Perlu Review</b>\n` +
       `Nama: ${invoice.full_name}\nEmail: ${invoice.email}\n` +
@@ -192,14 +197,25 @@ export async function POST(req: NextRequest) {
       supportPhone,
       supportEmail,
     }),
-  ])
+  ]).catch(() => {})
 
   const contactHtml = [
     supportPhone ? `WhatsApp: <a href="https://wa.me/${escapeHtml(supportPhone)}" style="color:#0A2F73">wa.me/${escapeHtml(supportPhone)}</a>` : null,
     supportEmail ? `Email: <a href="mailto:${escapeHtml(supportEmail)}" style="color:#0A2F73">${escapeHtml(supportEmail)}</a>` : null,
   ].filter(Boolean).join(' &nbsp;|&nbsp; ')
 
-  const message = `Bukti pembayaran tidak dapat diverifikasi otomatis: <em>${escapeHtml(reason)}</em>.<br><br>` +
+  const fmtTimeLocal = (d: Date) => d.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false })
+  const invoiceStart = fmtTimeLocal(invoiceCreatedAt)
+  const invoiceEnd   = fmtTimeLocal(new Date(invoiceCreatedAt.getTime() + 30 * 60 * 1000))
+
+  const debugInfo = [
+    `Invoice dibuat: ${invoiceStart} WIB`,
+    `Batas bayar: ${invoiceEnd} WIB`,
+    transactionTime ? `AI baca waktu struk: ${escapeHtml(transactionTime)}` : `AI tidak bisa baca waktu di struk`,
+  ].join(' · ')
+
+  const message = `Bukti pembayaran tidak dapat diverifikasi otomatis: <em>${escapeHtml(reason)}</em>.<br>` +
+    `<small style="color:#888">${debugInfo}</small><br><br>` +
     `Silakan kirimkan bukti bayar beserta kode referensi <strong>${escapeHtml(ref)}</strong> langsung kepada tim kami` +
     (contactHtml ? `:<br>${contactHtml}` : '.')
 
