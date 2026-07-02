@@ -62,6 +62,19 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
     if (countdown.remaining === 0 && status === 'idle') setStatus('expired')
   }, [countdown.remaining, status])
 
+  // poll status invoice saat menunggu verifikasi admin
+  useEffect(() => {
+    if (status !== 'pending_manual') return
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/subscribe/invoice-status?id=${invoiceId}`).then(r => r.json()).catch(() => null)
+      if (res?.status === 'active' || res?.status === 'paid') {
+        clearInterval(interval)
+        window.location.href = `/onboarding?invoice=${invoiceId}`
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [status, invoiceId])
+
   function handleFile(f: File) {
     setFile(f)
     setPreview(URL.createObjectURL(f))
@@ -97,6 +110,7 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
   const fmt = (n: number) => 'Rp ' + n.toLocaleString('id-ID')
 
   return (
+    <>
     <div className="min-h-screen font-sans" style={{ background: SURFACE }}>
       <nav style={{ borderBottom: `1px solid ${BORDER}`, background: 'white' }} className="sticky top-0 z-50">
         <div className="mx-auto max-w-2xl px-6 flex items-center h-16">
@@ -265,9 +279,16 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
 
               {preview ? (
                 <div className="flex flex-col items-center gap-4">
-                  <div className="relative w-full max-w-xs h-48 rounded-xl overflow-hidden"
-                    style={{ border: `1px solid ${BORDER}` }}>
+                  <div
+                    className="relative w-full max-w-xs h-48 rounded-xl overflow-hidden cursor-zoom-in"
+                    style={{ border: `1px solid ${BORDER}` }}
+                    onClick={() => setZoomed(true)}
+                    title="Klik untuk zoom"
+                  >
                     <Image src={preview} alt="Bukti bayar" fill className="object-contain" />
+                    <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-lg pointer-events-none">
+                      🔍 Zoom
+                    </div>
                   </div>
                   <button onClick={() => inputRef.current?.click()}
                     className="text-xs underline" style={{ color: TEXT_SEC }}>
@@ -286,9 +307,8 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
               )}
 
               {(status === 'rejected' || status === 'error') && (
-                <div className="mt-4 p-3 rounded-xl text-sm text-red-700 bg-red-50 border border-red-100">
-                  {message}
-                </div>
+                <div className="mt-4 p-3 rounded-xl text-sm text-red-700 bg-red-50 border border-red-100"
+                  dangerouslySetInnerHTML={{ __html: message }} />
               )}
 
               <button onClick={handleVerify} disabled={!file || status === 'uploading'}
@@ -307,5 +327,26 @@ export function QrisPaymentClient({ invoiceId, planName, fullName, email, amount
         )}
       </div>
     </div>
+
+    {zoomed && preview && (
+      <div
+        className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-zoom-out"
+        onClick={() => setZoomed(false)}
+      >
+        <img
+          src={preview}
+          alt="Bukti bayar"
+          className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+          onClick={e => e.stopPropagation()}
+        />
+        <button
+          onClick={() => setZoomed(false)}
+          className="absolute top-4 right-4 text-white bg-black/50 rounded-full w-9 h-9 flex items-center justify-center text-lg hover:bg-black/70"
+        >
+          ✕
+        </button>
+      </div>
+    )}
+    </>
   )
 }

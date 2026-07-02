@@ -15,21 +15,21 @@ const T = {
     back: 'Kembali', start: 'Mulai Gratis',
     badge: 'Mulai gratis, upgrade kapan saja',
     h1a: 'Harga yang Tumbuh', h1b: 'Bersama Bisnismu',
-    sub: '7 hari trial penuh. Tidak perlu kartu kredit. Toko live dalam 60 detik.',
+    sub: '14 hari trial penuh. Tidak perlu kartu kredit. Toko live dalam 60 detik.',
     popular: 'Terpopuler', free: 'Gratis',
     topupTitle: 'Butuh lebih banyak pesanan?',
     topupSub: 'Top-up kapan saja di dashboard, tidak perlu upgrade plan dulu.',
     topupLabel: '50 pesanan tambahan',
     compareTitle: 'Perbandingan Lengkap', faqTitle: 'Pertanyaan Umum',
-    ctaH: 'Mulai 7 Hari Gratis', ctaSub: 'Tidak perlu kartu kredit. Toko live dalam 60 detik.', ctaBtn: 'Coba Gratis Sekarang',
+    ctaH: 'Mulai 14 Hari Gratis', ctaSub: 'Tidak perlu kartu kredit. Toko live dalam 60 detik.', ctaBtn: 'Coba Gratis Sekarang',
     featureCol: 'Fitur',
     plans: [
-      { id: 'free', name: 'Free Trial', price: 0, period: '7 hari', desc: 'Coba semua fitur tanpa risiko, tanpa kartu kredit.', cta: 'Mulai Gratis', popular: false, features: ['Toko di subdomain sendiri', 'Onboarding via AI', 'AI Chatbot (10.000 token)', 'Checkout & pembayaran QRIS', 'Manajemen pesanan', 'Notifikasi WhatsApp otomatis', 'Verifikasi pembayaran via AI'], limits: ['Toko disuspend setelah 7 hari (upgrade untuk lanjutkan)'] },
-      { id: 'business', name: 'Business', price: 399000, period: '/bulan', desc: 'Untuk brand yang sudah aktif berjualan dan butuh semua fitur.', cta: 'Pilih Business', popular: true, features: ['Semua fitur Free Trial', 'AI Chatbot 1.000.000 token/bulan', '1.000 pesanan/bulan', 'Analitik penjualan 30 hari', 'Top-up pesanan kapan saja', 'Support via WhatsApp'], limits: ['Overage pesanan: Rp 1.000/pesanan ditagih bulan depan'] },
-      { id: 'enterprise', name: 'Enterprise', price: 599000, period: '/bulan', desc: 'Untuk brand dengan volume tinggi dan kebutuhan AI intensif.', cta: 'Pilih Enterprise', popular: false, features: ['Semua fitur Business', 'AI Chatbot 50 juta token/bulan', 'Pesanan tidak terbatas', 'Custom chatbot persona & nama', 'Priority support', 'SLA uptime 99.9%'], limits: [] },
+      { id: 'free', name: 'Free Trial', price: 0, period: '14 hari', desc: 'Coba semua fitur tanpa risiko, tanpa kartu kredit.', roi: 'Dapatkan pesanan pertama sebelum bayar sepeser pun', cta: 'Mulai Gratis', popular: false, features: ['Toko di subdomain sendiri', 'Onboarding via AI', 'AI Chatbot (10.000 token)', 'Checkout & pembayaran QRIS', 'Manajemen pesanan', 'Notifikasi WhatsApp otomatis', 'Verifikasi pembayaran via AI'], limits: ['Toko disuspend setelah 14 hari (upgrade untuk lanjutkan)'] },
+      { id: 'business', name: 'Business', price: 399000, period: '/bulan', desc: 'Untuk brand yang sudah aktif berjualan dan butuh semua fitur.', roi: 'Balik modal dari 3 pesanan ekstra/bulan. Chatbot 24 jam hemat biaya CS manual.', cta: 'Pilih Business', popular: true, features: ['Semua fitur Free Trial', 'AI Chatbot 1.000.000 token/bulan', '1.000 pesanan/bulan', 'Analitik penjualan 30 hari', 'Top-up pesanan kapan saja', 'Support via WhatsApp'], limits: ['Overage pesanan: Rp 1.000/pesanan ditagih bulan depan'] },
+      { id: 'enterprise', name: 'Enterprise', price: 599000, period: '/bulan', desc: 'Untuk brand dengan volume tinggi dan kebutuhan AI intensif.', roi: 'Untuk 300+ pesanan/bulan, biaya per transaksi turun jadi < Rp 2.000.', cta: 'Pilih Enterprise', popular: false, features: ['Semua fitur Business', 'AI Chatbot 50 juta token/bulan', 'Pesanan tidak terbatas', 'Custom chatbot persona & nama', 'Priority support', 'SLA uptime 99.9%'], limits: [] },
     ],
     faqs: [
-      { q: 'Apa yang terjadi setelah trial 7 hari habis?', a: 'Toko kamu akan disuspend, customer tidak bisa mengakses toko sampai kamu upgrade ke plan berbayar. Kami kirim notifikasi email dan WhatsApp sebelum dan saat trial habis.' },
+      { q: 'Apa yang terjadi setelah trial 14 hari habis?', a: 'Toko kamu akan disuspend, customer tidak bisa mengakses toko sampai kamu upgrade ke plan berbayar. Kami kirim notifikasi email dan WhatsApp sebelum dan saat trial habis.' },
       { q: 'Bagaimana cara top-up kuota pesanan?', a: 'Di dashboard merchant, kamu bisa beli paket top-up Rp 10.000 untuk 50 pesanan tambahan kapan saja. Top-up langsung aktif begitu pembayaran dikonfirmasi.' },
       { q: 'Apa itu overage pesanan di Business plan?', a: 'Jika kamu melewati 1.000 pesanan/bulan, pesanan tetap masuk (tidak diblokir). Biaya Rp 1.000 per pesanan lebih akan ditagihkan di bulan berikutnya. Kami kirim notifikasi WA saat kuota tinggal 20%.' },
       { q: 'Apakah token AI bisa ditambah?', a: 'Saat ini token AI tidak bisa di-top-up secara terpisah. Jika token habis sebelum akhir bulan, upgrade ke plan yang lebih tinggi adalah cara termudah.' },
@@ -40,28 +40,28 @@ const T = {
       ['Notifikasi WhatsApp','✓','✓','✓'],['Verifikasi bayar via AI','✓','✓','✓'],
       ['AI Chatbot token/bulan','10.000','1.000.000','50.000.000'],['Pesanan/bulan','—','1.000','Tidak terbatas'],
       ['Analitik penjualan','—','✓','✓'],['Top-up pesanan','—','✓','✓'],['Custom chatbot persona','—','—','✓'],
-      ['Priority support','—','—','✓'],['Durasi','7 hari','Per bulan','Per bulan'],['Harga','Gratis','Rp 399.000','Rp 599.000'],
+      ['Priority support','—','—','✓'],['Durasi','14 hari','Per bulan','Per bulan'],['Harga','Gratis','Rp 399.000','Rp 599.000'],
     ],
   },
   en: {
     back: 'Back', start: 'Start Free',
     badge: 'Start free, upgrade anytime',
     h1a: 'Pricing That Grows', h1b: 'With Your Business',
-    sub: 'Full 7-day trial. No credit card required. Store live in 60 seconds.',
+    sub: 'Full 14-day trial. No credit card required. Store live in 60 seconds.',
     popular: 'Most Popular', free: 'Free',
     topupTitle: 'Need more orders?',
     topupSub: 'Top-up anytime from the dashboard, no plan upgrade needed.',
     topupLabel: '50 additional orders',
     compareTitle: 'Full Comparison', faqTitle: 'FAQ',
-    ctaH: 'Start 7-Day Free Trial', ctaSub: 'No credit card required. Store live in 60 seconds.', ctaBtn: 'Try Free Now',
+    ctaH: 'Start 14-Day Free Trial', ctaSub: 'No credit card required. Store live in 60 seconds.', ctaBtn: 'Try Free Now',
     featureCol: 'Feature',
     plans: [
-      { id: 'free', name: 'Free Trial', price: 0, period: '7 days', desc: 'Try all features risk-free, no credit card.', cta: 'Start Free', popular: false, features: ['Store on your own subdomain', 'AI-powered onboarding', 'AI Chatbot (10,000 tokens)', 'Checkout & QRIS payment', 'Order management', 'Automatic WhatsApp notifications', 'AI payment verification'], limits: ['Store suspended after 7 days (upgrade to continue)'] },
-      { id: 'business', name: 'Business', price: 399000, period: '/month', desc: 'For active brands that need all features.', cta: 'Choose Business', popular: true, features: ['All Free Trial features', 'AI Chatbot 1,000,000 tokens/month', '1,000 orders/month', '30-day sales analytics', 'Order top-up anytime', 'WhatsApp support'], limits: ['Order overage: Rp 1,000/order billed next month'] },
-      { id: 'enterprise', name: 'Enterprise', price: 599000, period: '/month', desc: 'For high-volume brands with intensive AI needs.', cta: 'Choose Enterprise', popular: false, features: ['All Business features', 'AI Chatbot 50M tokens/month', 'Unlimited orders', 'Custom chatbot persona & name', 'Priority support', '99.9% uptime SLA'], limits: [] },
+      { id: 'free', name: 'Free Trial', price: 0, period: '14 days', desc: 'Try all features risk-free, no credit card.', roi: 'Get your first order before paying a single rupiah', cta: 'Start Free', popular: false, features: ['Store on your own subdomain', 'AI-powered onboarding', 'AI Chatbot (10,000 tokens)', 'Checkout & QRIS payment', 'Order management', 'Automatic WhatsApp notifications', 'AI payment verification'], limits: ['Store suspended after 14 days (upgrade to continue)'] },
+      { id: 'business', name: 'Business', price: 399000, period: '/month', desc: 'For active brands that need all features.', roi: 'Break even with just 3 extra orders/month. 24/7 AI chatbot saves on manual CS cost.', cta: 'Choose Business', popular: true, features: ['All Free Trial features', 'AI Chatbot 1,000,000 tokens/month', '1,000 orders/month', '30-day sales analytics', 'Order top-up anytime', 'WhatsApp support'], limits: ['Order overage: Rp 1,000/order billed next month'] },
+      { id: 'enterprise', name: 'Enterprise', price: 599000, period: '/month', desc: 'For high-volume brands with intensive AI needs.', roi: 'At 300+ orders/month, cost per transaction drops below Rp 2,000.', cta: 'Choose Enterprise', popular: false, features: ['All Business features', 'AI Chatbot 50M tokens/month', 'Unlimited orders', 'Custom chatbot persona & name', 'Priority support', '99.9% uptime SLA'], limits: [] },
     ],
     faqs: [
-      { q: 'What happens after the 7-day trial ends?', a: 'Your store will be suspended — customers cannot access it until you upgrade to a paid plan. We send email and WhatsApp notifications before and when the trial expires.' },
+      { q: 'What happens after the 14-day trial ends?', a: 'Your store will be suspended — customers cannot access it until you upgrade to a paid plan. We send email and WhatsApp notifications before and when the trial expires.' },
       { q: 'How do I top up order quota?', a: 'In the merchant dashboard, you can buy a top-up package of Rp 10,000 for 50 additional orders anytime. Top-up is active immediately once payment is confirmed.' },
       { q: 'What is order overage in the Business plan?', a: 'If you exceed 1,000 orders/month, orders still come in (not blocked). The Rp 1,000 per extra order fee is billed the following month. We send a WhatsApp notification when quota is down to 20%.' },
       { q: 'Can I top up AI tokens?', a: 'AI tokens cannot currently be topped up separately. If tokens run out before month end, upgrading to a higher plan is the easiest solution.' },
@@ -72,7 +72,7 @@ const T = {
       ['WhatsApp notifications','✓','✓','✓'],['AI payment verification','✓','✓','✓'],
       ['AI Chatbot tokens/month','10,000','1,000,000','50,000,000'],['Orders/month','—','1,000','Unlimited'],
       ['Sales analytics','—','✓','✓'],['Order top-up','—','✓','✓'],['Custom chatbot persona','—','—','✓'],
-      ['Priority support','—','—','✓'],['Duration','7 days','Monthly','Monthly'],['Price','Free','Rp 399,000','Rp 599,000'],
+      ['Priority support','—','—','✓'],['Duration','14 days','Monthly','Monthly'],['Price','Free','Rp 399,000','Rp 599,000'],
     ],
   },
 }
@@ -132,6 +132,9 @@ export function PricingContent() {
                 </div>
                 {p.price === 0 && <span className="text-sm" style={{ color: p.popular ? 'rgba(255,255,255,0.55)' : TEXT_SEC }}>{p.period}</span>}
                 <p className="text-sm mt-1" style={{ color: p.popular ? 'rgba(255,255,255,0.65)' : TEXT_SEC }}>{p.desc}</p>
+                <div className="mt-3 px-3 py-2 rounded-lg text-xs font-medium" style={{ background: p.popular ? `${GOLD}25` : `${GOLD}18`, color: p.popular ? GOLD : '#7A5A00' }}>
+                  💡 {p.roi}
+                </div>
               </div>
               <Link href="/onboarding" className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
                 style={{ background: p.popular ? GOLD : PRIMARY, color: p.popular ? '#1a1a1a' : 'white' }}>

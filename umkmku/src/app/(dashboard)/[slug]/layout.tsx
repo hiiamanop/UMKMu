@@ -20,7 +20,7 @@ function SuspendedOverlay({ slug, planId }: { slug: string; planId?: string }) {
           </h2>
           <p className="text-sm text-gray-500 mt-2 leading-relaxed">
             {isExpiredTrial
-              ? 'Masa trial 7 hari telah habis. Upgrade ke plan Business atau Enterprise untuk mengaktifkan kembali toko kamu.'
+              ? 'Masa trial 14 hari telah habis. Upgrade ke plan Business atau Enterprise untuk mengaktifkan kembali toko kamu.'
               : 'Toko kamu sedang disuspend karena periode berlangganan telah berakhir. Hubungi tim UMKMku untuk mengaktifkan kembali.'}
           </p>
         </div>
