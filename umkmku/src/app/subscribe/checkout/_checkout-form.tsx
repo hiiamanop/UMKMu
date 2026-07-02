@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Loader2, ArrowRight, QrCode, CreditCard } from 'lucide-react'
 import type { PricingBreakdown } from '@/lib/utils/pricing'
+import type { Lang } from '@/lib/lang'
 
 const PRIMARY = '#0A2F73'
 const GOLD = '#F4B400'
@@ -13,9 +14,11 @@ interface Props {
   plan: { id: string; name: string; price: number }
   pricing: PricingBreakdown
   slug?: string
+  lang?: Lang
 }
 
-export function CheckoutForm({ plan, pricing, slug }: Props) {
+export function CheckoutForm({ plan, pricing, slug, lang = 'id' }: Props) {
+  const isEn = lang === 'en'
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -48,39 +51,39 @@ export function CheckoutForm({ plan, pricing, slug }: Props) {
   return (
     <div className="bg-white rounded-2xl p-7" style={{ border: `1px solid ${BORDER}` }}>
       <div className="mb-6">
-        <h2 className="text-lg font-bold" style={{ color: PRIMARY }}>Data Diri</h2>
+        <h2 className="text-lg font-bold" style={{ color: PRIMARY }}>{isEn ? 'Your Details' : 'Data Diri'}</h2>
         <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>
-          Akan digunakan untuk akun dan invoice pembayaran.
+          {isEn ? 'Used for your account and payment invoice.' : 'Akan digunakan untuk akun dan invoice pembayaran.'}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>Nama Lengkap</label>
+          <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>{isEn ? 'Full Name' : 'Nama Lengkap'}</label>
           <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-            placeholder="Nama lengkap sesuai KTP" required className={inputCls} style={inputStyle}
+            placeholder={isEn ? 'Full name as on ID' : 'Nama lengkap sesuai KTP'} required className={inputCls} style={inputStyle}
             onFocus={e => (e.target.style.borderColor = PRIMARY)} onBlur={e => (e.target.style.borderColor = BORDER)} />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>Email Aktif</label>
+          <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>{isEn ? 'Active Email' : 'Email Aktif'}</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)}
             placeholder="email@bisnis.com" required className={inputCls} style={inputStyle}
             onFocus={e => (e.target.style.borderColor = PRIMARY)} onBlur={e => (e.target.style.borderColor = BORDER)} />
-          <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>Konfirmasi & invoice dikirim ke email ini</p>
+          <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>{isEn ? 'Confirmation & invoice will be sent here' : 'Konfirmasi & invoice dikirim ke email ini'}</p>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>Nomor WhatsApp</label>
+          <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>{isEn ? 'WhatsApp Number' : 'Nomor WhatsApp'}</label>
           <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
             placeholder="08xxxxxxxxxx" className={inputCls} style={inputStyle}
             onFocus={e => (e.target.style.borderColor = PRIMARY)} onBlur={e => (e.target.style.borderColor = BORDER)} />
-          <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>Opsional, untuk notifikasi aktivasi via WA</p>
+          <p className="text-xs mt-1" style={{ color: TEXT_SEC }}>{isEn ? 'Optional, for activation notifications via WA' : 'Opsional, untuk notifikasi aktivasi via WA'}</p>
         </div>
 
         {/* Metode Pembayaran */}
         <div>
-          <label className="block text-xs font-semibold mb-2" style={{ color: PRIMARY }}>Metode Pembayaran</label>
+          <label className="block text-xs font-semibold mb-2" style={{ color: PRIMARY }}>{isEn ? 'Payment Method' : 'Metode Pembayaran'}</label>
           <div className="flex flex-col gap-2">
 
             {/* QRIS Manual, aktif */}
@@ -100,7 +103,7 @@ export function CheckoutForm({ plan, pricing, slug }: Props) {
               <div className="flex-1">
                 <div className="text-sm font-semibold" style={{ color: PRIMARY }}>QRIS Manual</div>
                 <div className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>
-                  Scan QRIS → upload bukti → diverifikasi otomatis
+                  {isEn ? 'Scan QRIS → upload proof → auto verified' : 'Scan QRIS → upload bukti → diverifikasi otomatis'}
                 </div>
               </div>
               <div className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
@@ -123,11 +126,11 @@ export function CheckoutForm({ plan, pricing, slug }: Props) {
                   <span className="text-sm font-semibold" style={{ color: PRIMARY }}>Payment Gateway</span>
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                     style={{ background: '#FFF3CD', color: '#856404' }}>
-                    Belum tersedia
+                    {isEn ? 'Coming soon' : 'Belum tersedia'}
                   </span>
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>
-                  VA, Kartu Kredit, e-wallet, segera hadir
+                  {isEn ? 'VA, Credit Card, e-wallet, coming soon' : 'VA, Kartu Kredit, e-wallet, segera hadir'}
                 </div>
               </div>
             </div>
@@ -142,7 +145,7 @@ export function CheckoutForm({ plan, pricing, slug }: Props) {
           style={{ background: `${PRIMARY}08`, border: `1px solid ${PRIMARY}20` }}>
           <div>
             <div className="text-xs font-semibold" style={{ color: PRIMARY }}>UMKMu {plan.name}</div>
-            <div className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>Termasuk PPN 12%</div>
+            <div className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{isEn ? 'Includes 12% VAT' : 'Termasuk PPN 12%'}</div>
           </div>
           <div className="text-base font-bold" style={{ color: PRIMARY }}>
             Rp {pricing.finalPrice.toLocaleString('id-ID')}
@@ -156,15 +159,15 @@ export function CheckoutForm({ plan, pricing, slug }: Props) {
           style={{ background: GOLD, color: '#1a1a1a' }}
         >
           {loading ? (
-            <><Loader2 className="animate-spin" size={16} /> Menyiapkan pembayaran...</>
+            <><Loader2 className="animate-spin" size={16} /> {isEn ? 'Preparing payment...' : 'Menyiapkan pembayaran...'}</>
           ) : (
-            <><QrCode size={14} /> Lanjut ke Pembayaran <ArrowRight size={16} /></>
+            <><QrCode size={14} /> {isEn ? 'Continue to Payment' : 'Lanjut ke Pembayaran'} <ArrowRight size={16} /></>
           )}
         </button>
 
         <p className="text-center text-xs" style={{ color: TEXT_SEC }}>
-          Dengan melanjutkan kamu menyetujui{' '}
-          <a href="/syarat-ketentuan" className="underline">Syarat & Ketentuan</a> UMKMu.
+          {isEn ? 'By continuing you agree to the ' : 'Dengan melanjutkan kamu menyetujui '}
+          <a href="/syarat-ketentuan" className="underline">{isEn ? 'Terms & Conditions' : 'Syarat & Ketentuan'}</a> UMKMu.
         </p>
       </form>
     </div>

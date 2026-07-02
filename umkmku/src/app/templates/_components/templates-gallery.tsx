@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Sparkles, Monitor, Smartphone, ArrowRight } from 'lucide-react'
+import type { Lang } from '@/lib/lang'
 
 interface Template {
   id: string
@@ -22,6 +23,7 @@ interface CategoryFilter {
 interface Props {
   templates: Template[]
   categories: CategoryFilter[]
+  lang?: Lang
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -35,7 +37,8 @@ const PRIMARY = '#0A2F73'
 const BORDER = '#E5EAF0'
 const TEXT_SEC = '#5E6B85'
 
-export function TemplatesGallery({ templates, categories }: Props) {
+export function TemplatesGallery({ templates, categories, lang = 'id' }: Props) {
+  const isEn = lang === 'en'
   const [activeCategory, setActiveCategory] = useState('')
   const [previewMode, setPreviewMode] = useState<Record<string, 'desktop' | 'mobile'>>({})
 
@@ -72,7 +75,7 @@ export function TemplatesGallery({ templates, categories }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">Belum ada template untuk kategori ini.</div>
+        <div className="text-center py-20 text-gray-400">{isEn ? 'No templates in this category yet.' : 'Belum ada template untuk kategori ini.'}</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(t => {
@@ -97,7 +100,7 @@ export function TemplatesGallery({ templates, categories }: Props) {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-300">
                       <Sparkles size={28} />
-                      <span className="text-xs">Preview segera tersedia</span>
+                      <span className="text-xs">{isEn ? 'Preview coming soon' : 'Preview segera tersedia'}</span>
                     </div>
                   )}
 
@@ -150,7 +153,7 @@ export function TemplatesGallery({ templates, categories }: Props) {
                         className="flex-1 py-2 rounded-xl text-sm font-medium text-center transition-colors border hover:bg-gray-50"
                         style={{ borderColor: BORDER, color: TEXT_SEC }}
                       >
-                        Lihat Demo
+                        {isEn ? 'View Demo' : 'Lihat Demo'}
                       </a>
                     )}
                     <Link
@@ -158,7 +161,7 @@ export function TemplatesGallery({ templates, categories }: Props) {
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-sm font-semibold text-white transition-opacity hover:opacity-90"
                       style={{ background: PRIMARY }}
                     >
-                      Gunakan
+                      {isEn ? 'Use Template' : 'Gunakan'}
                       <ArrowRight size={13} />
                     </Link>
                   </div>
