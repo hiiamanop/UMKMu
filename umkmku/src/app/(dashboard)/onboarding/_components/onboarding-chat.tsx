@@ -281,6 +281,18 @@ export function OnboardingChat() {
     assistBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [assistMessages, assistLoading])
 
+  // Pre-fill nama & email dari invoice jika ada
+  useEffect(() => {
+    if (!invoiceId) return
+    fetch(`/api/subscribe/invoice-status?id=${invoiceId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.full_name) setFullName(d.full_name)
+        if (d.email) setEmail(d.email)
+      })
+      .catch(() => {})
+  }, [invoiceId])
+
   useEffect(() => {
     if (step !== 'template' || !category) return
     setTemplatesLoading(true)
