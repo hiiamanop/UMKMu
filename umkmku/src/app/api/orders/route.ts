@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
  *       subtotal: number,
  *       ppn: number,
  *       subtotal_with_ppn: number,
- *       xendit_fee: number,
+ *       gateway_fee: number,
  *       final_price: number
  *     }
  *   }
@@ -275,8 +275,8 @@ export async function POST(request: NextRequest) {
       console.log(`Promo code ${promo_code} received but not yet implemented`)
     }
 
-    // Step 4: Calculate pricing breakdown (PPN + Xendit fee)
-    const pricingBreakdown = calculatePricingBreakdown(subtotal)
+    // Step 4: Calculate pricing breakdown (PPN only — customer orders use merchant QRIS, no gateway fee)
+    const pricingBreakdown = calculatePricingBreakdown(subtotal, false)
 
     // Step 5: Create order record in database
     const orderData: any = {
@@ -287,8 +287,6 @@ export async function POST(request: NextRequest) {
       items: orderItems,
       subtotal: pricingBreakdown.subtotal,
       ppn: pricingBreakdown.ppn,
-      subtotal_with_ppn: pricingBreakdown.subtotalWithPpn,
-      xendit_fee: pricingBreakdown.xenditFee,
       final_price: pricingBreakdown.finalPrice,
       promo_code: promo_code || null,
       discount_amount: discountAmount,
@@ -299,7 +297,7 @@ export async function POST(request: NextRequest) {
     const { data: newOrder, error: insertError } = await supabase
       .from('orders')
       .insert(orderData)
-      .select('id, final_price, subtotal, ppn, subtotal_with_ppn, xendit_fee')
+      .select('id, final_price, subtotal, ppn')
       .single()
 
     if (insertError || !newOrder) {
@@ -342,8 +340,6 @@ export async function POST(request: NextRequest) {
           pricing_breakdown: {
             subtotal: newOrder.subtotal,
             ppn: newOrder.ppn,
-            subtotal_with_ppn: newOrder.subtotal_with_ppn,
-            xendit_fee: newOrder.xendit_fee,
             final_price: newOrder.final_price,
           },
         },

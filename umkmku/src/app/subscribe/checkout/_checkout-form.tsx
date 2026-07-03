@@ -22,7 +22,7 @@ export function CheckoutForm({ plan, pricing, slug, lang = 'id' }: Props) {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [paymentMethod, setPaymentMethod] = useState<'manual_qris' | 'xendit'>('manual_qris')
+  const [paymentMethod, setPaymentMethod] = useState<'manual_qris' | 'tripay'>('manual_qris')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -114,26 +114,33 @@ export function CheckoutForm({ plan, pricing, slug, lang = 'id' }: Props) {
               </div>
             </button>
 
-            {/* Payment Gateway, disabled */}
-            <div className="flex items-center gap-3 p-4 rounded-xl border text-left opacity-50 cursor-not-allowed"
-              style={{ borderColor: BORDER }}>
+            {/* Tripay */}
+            <button
+              type="button"
+              onClick={() => setPaymentMethod('tripay')}
+              className="flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all"
+              style={{
+                borderColor: paymentMethod === 'tripay' ? PRIMARY : BORDER,
+                background: paymentMethod === 'tripay' ? `${PRIMARY}08` : 'white',
+              }}
+            >
               <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                style={{ background: BORDER }}>
-                <CreditCard size={18} color={TEXT_SEC} />
+                style={{ background: paymentMethod === 'tripay' ? PRIMARY : BORDER }}>
+                <CreditCard size={18} color={paymentMethod === 'tripay' ? 'white' : TEXT_SEC} />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold" style={{ color: PRIMARY }}>Payment Gateway</span>
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: '#FFF3CD', color: '#856404' }}>
-                    {isEn ? 'Coming soon' : 'Belum tersedia'}
-                  </span>
-                </div>
+                <div className="text-sm font-semibold" style={{ color: PRIMARY }}>Tripay</div>
                 <div className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>
-                  {isEn ? 'VA, Credit Card, e-wallet, coming soon' : 'VA, Kartu Kredit, e-wallet, segera hadir'}
+                  {isEn ? 'QRIS, VA, e-wallet via Tripay (+0.7% fee)' : 'QRIS, VA, e-wallet via Tripay (+0.7% biaya)'}
                 </div>
               </div>
-            </div>
+              <div className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center"
+                style={{ borderColor: paymentMethod === 'tripay' ? PRIMARY : BORDER }}>
+                {paymentMethod === 'tripay' && (
+                  <div className="w-2 h-2 rounded-full" style={{ background: PRIMARY }} />
+                )}
+              </div>
+            </button>
           </div>
         </div>
 

@@ -145,7 +145,7 @@ export default function TermsPage() {
               <strong>Top-up pesanan:</strong> Merchant dapat membeli 50 pesanan tambahan seharga Rp 10.000 kapan saja melalui dashboard.
             </p>
             <p>
-              <strong>Pembayaran:</strong> Subscription dibayar di muka melalui QRIS atau Xendit. Pembayaran dianggap sah setelah terverifikasi oleh sistem.
+              <strong>Pembayaran:</strong> Subscription dibayar di muka melalui QRIS atau Tripay. Pembayaran dianggap sah setelah terverifikasi oleh sistem.
             </p>
             <p>
               <strong>Overage pesanan:</strong> Jika kuota pesanan Business hampir habis (sisa 20%), Merchant mendapat notifikasi WhatsApp. Pesanan tetap masuk dengan biaya overage Rp 1.000/pesanan yang ditagihkan bulan berikutnya.

@@ -1,48 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
-import { verifyXenditWebhook } from '@/lib/xendit'
+import { verifyTripayCallback } from '@/lib/tripay'
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('x-callback-token') ?? ''
-  if (!verifyXenditWebhook(token)) {
+  const rawBody = await req.text()
+  const signature = req.headers.get('x-callback-signature') ?? ''
+
+  if (!verifyTripayCallback(rawBody, signature)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await req.json()
-  const { external_id, status, payer_email } = body
+  const body = JSON.parse(rawBody) as {
+    reference: string
+    merchant_ref: string
+    status: 'PAID' | 'UNPAID' | 'EXPIRED' | 'FAILED' | 'REFUND'
+    total_amount: number
+  }
 
-  // Xendit status: PAID, SETTLED, EXPIRED
-  if (status !== 'PAID' && status !== 'SETTLED') {
-    // Mark expired/failed jika perlu
-    if (status === 'EXPIRED') {
-      const service = createServiceClient()
-      await service
-        .from('subscription_invoices')
-        .update({ status: 'expired' })
-        .eq('external_id', external_id)
-    }
+  const { merchant_ref, status } = body
+
+  if (status === 'EXPIRED' || status === 'FAILED') {
+    const service = createServiceClient()
+    await service
+      .from('subscription_invoices')
+      .update({ status: 'expired' })
+      .eq('external_id', merchant_ref)
     return NextResponse.json({ ok: true })
   }
+
+  if (status !== 'PAID') return NextResponse.json({ ok: true })
 
   const service = createServiceClient()
 
   const { data: inv } = await service
     .from('subscription_invoices')
     .select('id, plan_id, email, full_name, status, tenant_id')
-    .eq('external_id', external_id)
+    .eq('external_id', merchant_ref)
     .single()
 
-  if (!inv || inv.status === 'paid') {
-    return NextResponse.json({ ok: true }) // idempotent
-  }
+  if (!inv || inv.status === 'paid') return NextResponse.json({ ok: true }) // idempotent
 
-  // Tandai invoice paid
   await service
     .from('subscription_invoices')
     .update({ status: 'paid', paid_at: new Date().toISOString() })
     .eq('id', inv.id)
 
-  // Jika invoice sudah terhubung ke tenant (renewal), aktifkan subscription langsung
   if (inv.tenant_id) {
     const periodStart = new Date().toISOString()
     const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -67,9 +69,6 @@ export async function POST(req: NextRequest) {
       .update({ is_active: true })
       .eq('id', inv.tenant_id)
   }
-
-  // Kirim WA aktivasi jika ada nomor (tersimpan di top_up_orders atau bisa dari user profile)
-  // ponytail: kirim WA nanti via admin confirm; notif email dari Xendit sudah cukup untuk sekarang
 
   return NextResponse.json({ ok: true })
 }

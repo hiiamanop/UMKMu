@@ -257,10 +257,10 @@ export interface SubscriptionInvoice {
   full_name: string | null
   amount: number
   ppn: number
-  xendit_fee: number
+  gateway_fee: number
   final_amount: number
-  xendit_invoice_id: string | null
-  xendit_invoice_url: string | null
+  payment_reference: string | null
+  payment_url: string | null
   status: 'pending' | 'paid' | 'expired' | 'failed'
   paid_at: string | null
   tenant_id: string | null

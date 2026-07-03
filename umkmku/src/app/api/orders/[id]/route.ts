@@ -21,8 +21,6 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
  *     pricing_breakdown: {
  *       subtotal: number,
  *       ppn: number,
- *       subtotal_with_ppn: number,
- *       xendit_fee: number,
  *       final_price: number
  *     }
  *   }
@@ -61,8 +59,6 @@ export async function GET(
         items,
         subtotal,
         ppn,
-        subtotal_with_ppn,
-        xendit_fee,
         final_price,
         qris_code,
         qris_image_url,
@@ -114,8 +110,6 @@ export async function GET(
         pricing_breakdown: {
           subtotal: order.subtotal,
           ppn: order.ppn,
-          subtotal_with_ppn: order.subtotal_with_ppn,
-          xendit_fee: order.xendit_fee,
           final_price: order.final_price,
         },
       },
@@ -226,8 +220,6 @@ export async function PUT(
         items,
         subtotal,
         ppn,
-        subtotal_with_ppn,
-        xendit_fee,
         final_price,
         payment_status,
         order_status,

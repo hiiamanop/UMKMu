@@ -34,10 +34,10 @@ export function PriceBreakdown({ pricing }: PriceBreakdownProps) {
         <span className="font-semibold text-gray-900">{formatRupiah(pricing.subtotalWithPpn)}</span>
       </div>
 
-      {/* Xendit Fee */}
+      {/* Gateway Fee */}
       <div className="flex justify-between text-sm text-gray-600">
-        <span>Biaya Xendit (2.5%)</span>
-        <span className="font-medium text-gray-900">{formatRupiah(pricing.xenditFee)}</span>
+        <span>Biaya Tripay (0.7%)</span>
+        <span className="font-medium text-gray-900">{formatRupiah(pricing.gatewayFee)}</span>
       </div>
 
       {/* Final Divider */}

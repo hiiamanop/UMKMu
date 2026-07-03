@@ -2,11 +2,10 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Upload, X, CheckCircle2, Plus } from 'lucide-react'
+import { Loader2, Upload, X, CheckCircle2, Monitor, Smartphone, Eye, Trash2 } from 'lucide-react'
 
 const PRIMARY = '#0A2F73'
 const BORDER = '#E5EAF0'
-const TEXT_SEC = '#5E6B85'
 
 const CATEGORIES = [
   { value: 'skincare', label: 'Skincare & Beauty' },
@@ -18,6 +17,8 @@ const CATEGORIES = [
 const inputCls = 'w-full rounded-xl px-4 py-3 text-sm border outline-none transition-colors bg-white'
 const inputStyle = { borderColor: BORDER }
 
+type PreviewFile = { url: string; name: string; type: 'desktop' | 'mobile' }
+
 export function SubmitTemplateForm() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -27,7 +28,8 @@ export function SubmitTemplateForm() {
   const [category, setCategory] = useState('')
   const [repoUrl, setRepoUrl] = useState('')
   const [demoUrl, setDemoUrl] = useState('')
-  const [previewImages, setPreviewImages] = useState<string[]>([])
+  const [previewFiles, setPreviewFiles] = useState<PreviewFile[]>([])
+  const [uploadMode, setUploadMode] = useState<'desktop' | 'mobile'>('desktop')
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -45,7 +47,7 @@ export function SubmitTemplateForm() {
         const res = await fetch('/api/upload', { method: 'POST', body: form })
         if (!res.ok) throw new Error('Upload gagal')
         const { url } = await res.json()
-        setPreviewImages(prev => [...prev, url])
+        setPreviewFiles(prev => [...prev, { url, name: file.name, type: uploadMode }])
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload gagal')
@@ -61,6 +63,11 @@ export function SubmitTemplateForm() {
     setLoading(true)
     setError(null)
     try {
+      // Desktop first (index 0), mobile second (index 1) — sesuai konvensi admin templates
+      const ordered = [
+        ...previewFiles.filter(f => f.type === 'desktop').map(f => f.url),
+        ...previewFiles.filter(f => f.type === 'mobile').map(f => f.url),
+      ]
       const res = await fetch('/api/freelancer/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -70,7 +77,7 @@ export function SubmitTemplateForm() {
           category,
           repo_url: repoUrl,
           demo_url: demoUrl,
-          preview_image_urls: previewImages,
+          preview_image_urls: ordered,
         }),
       })
       if (!res.ok) {
@@ -136,32 +143,67 @@ export function SubmitTemplateForm() {
 
       {/* Preview images */}
       <div>
-        <label className="block text-xs font-semibold mb-1.5" style={{ color: PRIMARY }}>
-          Preview Images <span className="font-normal text-gray-400">(minimal 1 desktop + 1 mobile, bisa lebih)</span>
-        </label>
-        <div className="flex flex-wrap gap-2 mb-2">
-          {previewImages.map((url, i) => (
-            <div key={i} className="relative w-24 h-16 rounded-lg overflow-hidden border" style={{ borderColor: BORDER }}>
-              <img src={url} alt={`preview ${i + 1}`} className="w-full h-full object-cover" />
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-xs font-semibold" style={{ color: PRIMARY }}>
+            Preview Images <span className="font-normal text-gray-400">(minimal 1 desktop + 1 mobile)</span>
+          </label>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => setUploadMode('desktop')}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${uploadMode === 'desktop' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400'}`}
+            >
+              <Monitor size={12} /> Desktop
+            </button>
+            <button
+              type="button"
+              onClick={() => setUploadMode('mobile')}
+              className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${uploadMode === 'mobile' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400'}`}
+            >
+              <Smartphone size={12} /> Mobile
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border space-y-0 overflow-hidden" style={{ borderColor: BORDER }}>
+          {previewFiles.filter(f => f.type === uploadMode).length === 0 && (
+            <div className="px-4 py-3 text-xs text-gray-400">
+              Belum ada file {uploadMode}. Upload di bawah.
+            </div>
+          )}
+          {previewFiles.filter(f => f.type === uploadMode).map((file, i) => (
+            <div key={file.url} className="flex items-center gap-3 px-4 py-2.5 border-b last:border-0 text-sm" style={{ borderColor: BORDER }}>
+              <span className="flex-1 truncate text-gray-700 font-mono text-xs">{file.name}</span>
+              <a
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                <Eye size={13} /> Preview
+              </a>
               <button
                 type="button"
-                onClick={() => setPreviewImages(prev => prev.filter((_, idx) => idx !== i))}
-                className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
+                onClick={() => setPreviewFiles(prev => prev.filter(f => f.url !== file.url))}
+                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors"
               >
-                <X size={10} />
+                <Trash2 size={13} /> Hapus
               </button>
             </div>
           ))}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-24 h-16 rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-gray-400 transition-colors disabled:opacity-50"
-            style={{ borderColor: BORDER }}
-          >
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <><Upload size={14} /><span className="text-xs">Tambah</span></>}
-          </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          style={{ borderColor: BORDER }}
+        >
+          {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+          {uploading ? 'Mengupload...' : `Tambah gambar ${uploadMode}`}
+        </button>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -170,7 +212,7 @@ export function SubmitTemplateForm() {
           onChange={handleImageUpload}
           className="hidden"
         />
-        <p className="text-xs text-gray-400">Upload screenshot desktop (1440px) dan mobile (375px). Format JPG/PNG/WebP.</p>
+        <p className="text-xs text-gray-400 mt-1.5">Desktop: 1440px · Mobile: 375px · Format JPG/PNG/WebP.</p>
       </div>
 
       {error && <div className="p-3 rounded-xl text-sm text-red-700 bg-red-50 border border-red-200">{error}</div>}

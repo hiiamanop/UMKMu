@@ -104,7 +104,7 @@ export default function PrivacyPage() {
               { name: 'Supabase', reason: 'Penyimpanan database dan autentikasi pengguna', detail: 'Data disimpan di server Supabase dengan enkripsi standar industri.' },
               { name: 'Google Gemini AI', reason: 'Pemrosesan AI Chatbot dan verifikasi bukti pembayaran', detail: 'Percakapan chatbot dan gambar bukti bayar dikirim ke Google untuk diproses.' },
               { name: 'Fonnte (WhatsApp)', reason: 'Pengiriman notifikasi WhatsApp', detail: 'Nomor HP dan isi pesan notifikasi dikirim melalui Fonnte API.' },
-              { name: 'Xendit', reason: 'Pemrosesan pembayaran subscription', detail: 'Data transaksi keuangan diproses melalui gateway Xendit.' },
+              { name: 'Tripay', reason: 'Pemrosesan pembayaran subscription', detail: 'Data transaksi keuangan diproses melalui gateway Tripay.' },
               { name: 'Vercel', reason: 'Hosting dan infrastruktur platform', detail: 'Semua traffic platform melalui infrastruktur Vercel.' },
             ].map((p) => (
               <div key={p.name} className="p-4 rounded-xl bg-white" style={{ border: `1px solid ${BORDER}` }}>

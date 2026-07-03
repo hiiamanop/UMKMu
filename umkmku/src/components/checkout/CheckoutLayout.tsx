@@ -16,7 +16,7 @@ interface Props {
   items: OrderItem[]
   subtotal: number
   ppn: number
-  xenditFee: number
+  gatewayFee: number
   total: number
 }
 
@@ -28,7 +28,7 @@ const TRUST_BADGES = [
   { icon: Package, label: 'Plastic-Free', desc: 'Kemasan ramah lingkungan' },
 ]
 
-export function CheckoutLayout({ children, step, items, subtotal, ppn, xenditFee, total }: Props) {
+export function CheckoutLayout({ children, step, items, subtotal, ppn, gatewayFee, total }: Props) {
   return (
     <main className="bg-[#f9f9f9] min-h-screen">
       {/* Secure checkout header */}
@@ -117,7 +117,7 @@ export function CheckoutLayout({ children, step, items, subtotal, ppn, xenditFee
               </div>
               <div className="flex justify-between text-[14px]">
                 <span className="text-[#5b3f43]">Biaya transaksi</span>
-                <span className="font-bold">{formatRupiah(xenditFee)}</span>
+                <span className="font-bold">{formatRupiah(gatewayFee)}</span>
               </div>
               <div className="flex justify-between border-t border-[#e4bdc2] pt-2">
                 <span className="text-[16px] font-bold text-[#1a1c1c]">Total</span>
