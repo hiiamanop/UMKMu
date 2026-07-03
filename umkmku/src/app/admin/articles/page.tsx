@@ -47,17 +47,20 @@ export default function ArticlesPage() {
   }
 
   async function toggleStatus(a: Article) {
-    setToggling(a.id)
     const next = a.status === 'published' ? 'draft' : 'published'
-    const res  = await fetch('/api/admin/articles', {
+    // Optimistic update
+    setArticles(prev => prev.map(x =>
+      x.id === a.id ? { ...x, status: next, published_at: next === 'published' ? new Date().toISOString() : null } : x
+    ))
+    setToggling(a.id)
+    const res = await fetch('/api/admin/articles', {
       method : 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body   : JSON.stringify({ id: a.id, status: next }),
     })
-    if (res.ok) {
-      setArticles(prev => prev.map(x =>
-        x.id === a.id ? { ...x, status: next, published_at: next === 'published' ? new Date().toISOString() : null } : x
-      ))
+    if (!res.ok) {
+      // Revert on error
+      setArticles(prev => prev.map(x => x.id === a.id ? a : x))
     }
     setToggling(null)
   }
